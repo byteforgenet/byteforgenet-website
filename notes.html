@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Notes | Byteforgenet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="layout.js"></script>
+    <style>
+        .notes-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .notes-header h2 {
+            margin: 0;
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .note-card {
+            border-radius: 18px;
+            padding: 20px;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(18, 18, 18, 0.92);
+            border: 1px solid rgba(96, 165, 250, 0.18);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .note-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 20px rgba(96, 165, 250, 0.1);
+        }
+
+
+        .note-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .note-body {
+            font-size: 13px;
+            color: #bbb;
+            line-height: 1.55;
+            flex: 1;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+        }
+
+        .note-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .note-date {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .note-delete {
+            background: none;
+            border: none;
+            color: #444;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 3px 7px;
+            border-radius: 6px;
+            transition: all 0.15s;
+        }
+
+        .note-delete:hover {
+            background: rgba(96, 165, 250, 0.12);
+            color: #93c5fd;
+        }
+
+        .note-add-card {
+            border-radius: 18px;
+            padding: 20px;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #555;
+        }
+
+        .note-add-card:hover {
+            border-color: rgba(79, 140, 255, 0.4);
+            color: #4f8cff;
+            background: rgba(79, 140, 255, 0.04);
+        }
+
+        .note-add-card span {
+            font-size: 32px;
+        }
+
+        .note-add-card p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        /* ====== Modal ====== */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-card {
+            background: #131318;
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            border-radius: 20px;
+            padding: 28px 32px;
+            width: 480px;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-card h3 {
+            margin: 0 0 18px;
+            font-size: 18px;
+        }
+
+        .color-picker {
+            display: none;
+        }
+
+
+
+        .note-edit-title {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .note-edit-body {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #ddd;
+            font-size: 14px;
+            line-height: 1.6;
+            min-height: 140px;
+            resize: vertical;
+            font-family: inherit;
+            margin-bottom: 16px;
+        }
+
+        .note-edit-title:focus,
+        .note-edit-body:focus {
+            outline: none;
+            border-color: #4f8cff;
+            box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.15);
+        }
+
+        @media (max-width: 600px) {
+            .notes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-card {
+                width: 95vw;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body class="auth-bg">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <div class="topbar-left">
+            <h1 class="app-logo">Byteforgenet</h1>
+        </div>
+        <div class="topbar-right">
+            <button id="themeToggle" title="Toggle theme"
+                style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;"
+                onclick="toggleTheme()">🌙</button>
+
+            <div class="notif-wrap" id="notifBtn">
+                <div class="bell"></div>
+                <span class="notif-count" id="notifCount">0</span>
+                <div class="notif-menu hidden" id="notifMenu">
+                    <h4>Notifications</h4>
+                    <div id="notifList"></div>
+                </div>
+            </div>
+
+            <div class="profile" id="profileBtn">
+                <div class="user-text">
+                    <span class="username" id="topbarName">—</span>
+                    <span class="role-badge" id="roleBadge"></span>
+                </div>
+                <div class="avatar" id="topbarAvatar"><span class="online-dot"></span></div>
+                <div class="profile-menu hidden" id="profileMenu">
+                    <div class="menu-section">
+                        <button class="menu-item" onclick="location.href='profile.html'">Profile</button>
+                        <button class="menu-item" onclick="location.href='settings.html'">Settings</button>
+                    </div>
+                    <div class="menu-divider"></div>
+                    <div class="menu-section">
+                        <button class="menu-item danger" onclick="logout()">Sign out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <nav>
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+                <a href="project.html" class="nav-item">Projects</a>
+                <a href="notes.html" class="nav-item active">Notes</a>
+                <a href="teams.html" class="nav-item">Teams</a>
+                <a href="profile.html" class="nav-item">Profile</a>
+                <a href="settings.html" class="nav-item">Settings</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+
+            <div class="notes-header">
+                <div>
+                    <h2>Notes</h2>
+                    <p style="color:#777;font-size:13px;margin:4px 0 0;">Your personal scratch pad. <span id="noteCount"
+                            style="color:#4f8cff;"></span></p>
+                </div>
+                <button class="primary small" onclick="openNoteModal()">+ New Note</button>
+            </div>
+
+            <div class="notes-grid" id="notesGrid"></div>
+
+        </main>
+    </div>
+
+    <!-- CREATE / EDIT NOTE MODAL -->
+    <div class="modal hidden" id="noteModal">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="margin:0;" id="modalTitle">New Note</h3>
+                <button onclick="closeNoteModal()"
+                    style="background:none;border:none;color:#777;font-size:20px;cursor:pointer;">✕</button>
+            </div>
+
+            <label
+                style="font-size:12px;color:#9aa3b2;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;">Color</label>
+            <div class="color-picker">
+                <div class="color-dot yellow selected" data-color="yellow" onclick="selectColor('yellow')"></div>
+                <div class="color-dot blue" data-color="blue" onclick="selectColor('blue')"></div>
+                <div class="color-dot green" data-color="green" onclick="selectColor('green')"></div>
+                <div class="color-dot red" data-color="red" onclick="selectColor('red')"></div>
+                <div class="color-dot purple" data-color="purple" onclick="selectColor('purple')"></div>
+            </div>
+
+            <input class="note-edit-title" id="noteTitle" placeholder="Note title…" />
+            <textarea class="note-edit-body" id="noteBody" placeholder="Write anything…"></textarea>
+
+            <div style="display:flex;justify-content:flex-end;gap:10px;">
+                <button class="ghost" onclick="closeNoteModal()">Cancel</button>
+                <button class="primary small" onclick="saveNote()">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHORTCUT OVERLAY -->
+    <div class="modal hidden" id="shortcutModal">
+        <div class="modal-card" onclick="event.stopPropagation()" style="width:420px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                <h3 style="margin:0;">Keyboard Shortcuts</h3>
+                <button onclick="document.getElementById('shortcutModal').classList.add('hidden')"
+                    style="background:none;border:none;color:#777;font-size:20px;cursor:pointer;">✕</button>
+            </div>
+            <div>
+                ${[
+                ["N", "New note"],
+                ["?", "Show this help"],
+                ["Esc", "Close any modal"],
+                ].map(([k,d]) => `
+                <div
+                    style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <span style="color:#aaa;font-size:14px;">${d}</span>
+                    <kbd
+                        style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:3px 10px;font-size:12px;font-family:monospace;">${k}</kbd>
+                </div>`).join("")}
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth } from "./firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+        import { toast } from "./shared.js";
+
+        /* AUTH */
+        onAuthStateChanged(auth, user => {
+            if (!user) return;
+            const name = user.displayName || user.email?.split("@")[0] || "User";
+            document.getElementById("topbarName").textContent = name;
+            const av = document.getElementById("topbarAvatar");
+            if (user.photoURL) {
+                av.innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/><span class="online-dot"></span>`;
+            } else {
+                av.innerHTML = `${name.charAt(0).toUpperCase()}<span class="online-dot"></span>`;
+            }
+            const role = localStorage.getItem("bf_role") || "member";
+            const badge = document.getElementById("roleBadge");
+            badge.textContent = role.toUpperCase();
+            badge.classList.add(role === "admin" ? "role-admin" : "role-member");
+        });
+        window.logout = () => {
+            import("https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js").then(({ signOut }) => {
+                signOut(auth).then(() => window.location.href = "login.html");
+            });
+        };
+
+        /* DROPDOWNS */
+        const profileBtn = document.getElementById("profileBtn");
+        const profileMenu = document.getElementById("profileMenu");
+        const notifBtn = document.getElementById("notifBtn");
+        const notifMenu = document.getElementById("notifMenu");
+        profileBtn.onclick = e => { e.stopPropagation(); profileMenu.classList.toggle("hidden"); notifMenu.classList.add("hidden"); };
+        notifBtn.onclick = e => { e.stopPropagation(); notifMenu.classList.toggle("hidden"); profileMenu.classList.add("hidden"); };
+        document.onclick = () => { profileMenu.classList.add("hidden"); notifMenu.classList.add("hidden"); };
+
+        const notifs = JSON.parse(localStorage.getItem("bf_notifications") || "[]");
+        document.getElementById("notifCount").textContent = notifs.length;
+        document.getElementById("notifList").innerHTML = notifs.length
+            ? notifs.map(n => `<div class="notif-item">${n.text}</div>`).join("")
+            : `<div style="color:#777;font-size:13px;padding:6px 0;">No notifications</div>`;
+
+        /* THEME */
+        const savedTheme = localStorage.getItem("bf_theme") || "dark";
+        if (savedTheme === "light") document.documentElement.classList.add("light-mode");
+        document.getElementById("themeToggle").textContent = savedTheme === "light" ? "☀️" : "🌙";
+        window.toggleTheme = function () {
+            const isLight = document.documentElement.classList.toggle("light-mode");
+            localStorage.setItem("bf_theme", isLight ? "light" : "dark");
+            document.getElementById("themeToggle").textContent = isLight ? "☀️" : "🌙";
+        };
+
+        /* NOTES DATA */
+        const NOTES_KEY = "bf_notes";
+        function loadNotes() { return JSON.parse(localStorage.getItem(NOTES_KEY) || "[]"); }
+        function saveNotes(n) { localStorage.setItem(NOTES_KEY, JSON.stringify(n)); }
+
+        function renderNotes() {
+            const notes = loadNotes();
+            const grid = document.getElementById("notesGrid");
+            const cnt = document.getElementById("noteCount");
+            cnt.textContent = notes.length ? `${notes.length} note${notes.length > 1 ? "s" : ""}` : "No notes yet";
+            grid.innerHTML = "";
+
+            // Add-new card first
+            const addCard = document.createElement("div");
+            addCard.className = "note-add-card";
+            addCard.onclick = () => openNoteModal();
+            addCard.innerHTML = `<span>＋</span><p>New note</p>`;
+            grid.appendChild(addCard);
+
+            notes.slice().reverse().forEach(note => {
+                const card = document.createElement("div");
+                card.className = `note-card color-${note.color || "yellow"}`;
+                const d = new Date(note.created).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                card.innerHTML = `
+      <p class="note-title">${escHtml(note.title || "Untitled")}</p>
+      <p class="note-body">${escHtml(note.body || "")}</p>
+      <div class="note-footer">
+        <span class="note-date">${d}</span>
+        <button class="note-delete" onclick="deleteNote(${note.id});event.stopPropagation();" title="Delete">✕</button>
+      </div>`;
+                card.onclick = () => openNoteModal(note.id);
+                grid.appendChild(card);
+            });
+        }
+
+        function escHtml(s) {
+            return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        /* MODAL LOGIC */
+        let editingId = null;
+        let selectedColor = "yellow";
+
+        window.openNoteModal = function (id = null) {
+            editingId = id;
+            document.getElementById("modalTitle").textContent = id ? "Edit Note" : "New Note";
+            if (id) {
+                const note = loadNotes().find(n => n.id === id);
+                document.getElementById("noteTitle").value = note.title || "";
+                document.getElementById("noteBody").value = note.body || "";
+                selectColor(note.color || "yellow");
+            } else {
+                document.getElementById("noteTitle").value = "";
+                document.getElementById("noteBody").value = "";
+                selectColor("yellow");
+            }
+            document.getElementById("noteModal").classList.remove("hidden");
+            setTimeout(() => document.getElementById("noteTitle").focus(), 80);
+        };
+
+        window.closeNoteModal = function () {
+            document.getElementById("noteModal").classList.add("hidden");
+            document.getElementById("shortcutModal").classList.add("hidden");
+        };
+        document.getElementById("noteModal").onclick = closeNoteModal;
+
+        window.selectColor = function (color) {
+            selectedColor = color;
+            document.querySelectorAll(".color-dot").forEach(d => d.classList.toggle("selected", d.dataset.color === color));
+        };
+
+        window.saveNote = function () {
+            const title = document.getElementById("noteTitle").value.trim();
+            const body = document.getElementById("noteBody").value.trim();
+            if (!title && !body) { toast("Write something first!", "error"); return; }
+
+            const notes = loadNotes();
+            if (editingId) {
+                const idx = notes.findIndex(n => n.id === editingId);
+                if (idx !== -1) { notes[idx].title = title; notes[idx].body = body; notes[idx].color = selectedColor; }
+            } else {
+                notes.push({ id: Date.now(), title, body, color: selectedColor, created: Date.now() });
+            }
+            saveNotes(notes);
+            closeNoteModal();
+            renderNotes();
+            toast(editingId ? "Note updated!" : "Note saved!", "success");
+        };
+
+        window.deleteNote = function (id) {
+            const notes = loadNotes().filter(n => n.id !== id);
+            saveNotes(notes);
+            renderNotes();
+            toast("Note deleted.", "info");
+        };
+
+        /* KEYBOARD */
+        document.addEventListener("keydown", e => {
+            if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+            if (e.key === "?" || e.key === "/") { e.preventDefault(); document.getElementById("shortcutModal").classList.remove("hidden"); }
+            if (e.key === "Escape") closeNoteModal();
+            if (e.key === "n" || e.key === "N") openNoteModal();
+        });
+
+        renderNotes();
+    </script>
+
+    <script type="module" src="authGuard.js"></script>
+
+</body>
+
+</html>

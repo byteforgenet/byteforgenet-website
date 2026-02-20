@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Projects | Byteforgenet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./style.css" />
+  <script type="module" src="layout.js"></script>
+  <style>
+    /* ========== KANBAN BOARD ========== */
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .kanban-col {
+      background: rgba(14, 14, 20, 0.9);
+      border: 1px solid rgba(96, 165, 250, 0.12);
+      border-radius: 18px;
+      padding: 20px;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s;
+    }
+
+    .kanban-col.drag-over {
+      border-color: rgba(79, 140, 255, 0.55);
+      background: rgba(79, 140, 255, 0.04);
+    }
+
+    .kanban-col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .kanban-col-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .col-todo .kanban-col-title {
+      color: #93c5fd;
+    }
+
+    .col-inprog .kanban-col-title {
+      color: #fbbf24;
+    }
+
+    .col-done .kanban-col-title {
+      color: #86efac;
+    }
+
+    .col-count {
+      font-size: 12px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .col-todo .col-count {
+      background: rgba(79, 140, 255, 0.15);
+      color: #93c5fd;
+    }
+
+    .col-inprog .col-count {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+    }
+
+    .col-done .col-count {
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+    }
+
+    .kanban-cards {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 60px;
+    }
+
+    .kanban-card {
+      background: rgba(24, 24, 32, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 13px;
+      padding: 14px 16px;
+      cursor: grab;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      transition: box-shadow 0.2s, transform 0.2s;
+      user-select: none;
+    }
+
+    .kanban-card:hover {
+      border-color: rgba(79, 140, 255, 0.35);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .kanban-card.dragging {
+      opacity: 0.45;
+      cursor: grabbing;
+      transform: rotate(1.5deg) scale(1.03);
+    }
+
+    .kanban-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kanban-card-text {
+      font-size: 14px;
+      font-weight: 500;
+      flex: 1;
+      padding-right: 8px;
+      line-height: 1.4;
+    }
+
+    .kanban-delete {
+      background: none;
+      border: none;
+      color: #444;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 5px;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .kanban-delete:hover {
+      background: rgba(248, 113, 113, 0.15);
+      color: #f87171;
+    }
+
+    .prio-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      padding: 2px 9px;
+      border-radius: 999px;
+    }
+
+    .prio-High {
+      background: rgba(96, 165, 250, 0.2);
+      color: #93c5fd;
+    }
+
+    .prio-Med {
+      background: rgba(96, 165, 250, 0.1);
+      color: #6b92c8;
+    }
+
+    .prio-Low {
+      background: rgba(255, 255, 255, 0.05);
+      color: #6b7280;
+    }
+
+    .kanban-add-btn {
+      margin-top: 14px;
+      padding: 9px;
+      border-radius: 10px;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      background: none;
+      color: #555;
+      width: 100%;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .kanban-add-btn:hover {
+      border-color: rgba(79, 140, 255, 0.4);
+      color: #4f8cff;
+      background: rgba(79, 140, 255, 0.05);
+    }
+
+    /* ========= MODAL ========= */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-card {
+      background: #131318;
+      border: 1px solid rgba(96, 165, 250, 0.2);
+      border-radius: 20px;
+      padding: 28px 32px;
+      width: 380px;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-card h3 {
+      margin: 0 0 18px;
+      font-size: 18px;
+    }
+
+    .prio-btn-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .prio-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: #aaa;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+
+    .prio-btn.active {
+      border-color: #4f8cff;
+      color: #4f8cff;
+      background: rgba(79, 140, 255, 0.1);
+    }
+
+    @media (max-width: 900px) {
+      .kanban-board {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body class="auth-bg">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 class="app-logo">Byteforgenet</h1>
+    </div>
+    <div class="topbar-right">
+      <!-- Theme toggle -->
+      <button id="themeToggle" title="Toggle theme"
+        style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;"
+        onclick="toggleTheme()">🌙</button>
+
+      <div class="notif-wrap" id="notifBtn">
+        <div class="bell"></div>
+        <span class="notif-count" id="notifCount">0</span>
+        <div class="notif-menu hidden" id="notifMenu">
+          <h4>Notifications</h4>
+          <div id="notifList"></div>
+        </div>
+      </div>
+
+      <div class="profile" id="profileBtn">
+        <div class="user-text">
+          <span class="username" id="topbarName">—</span>
+          <span class="role-badge" id="roleBadge"></span>
+        </div>
+        <div class="avatar" id="topbarAvatar"><span class="online-dot"></span></div>
+        <div class="profile-menu hidden" id="profileMenu">
+          <div class="menu-section">
+            <button class="menu-item" onclick="location.href='profile.html'">Profile</button>
+            <button class="menu-item" onclick="location.href='settings.html'">Settings</button>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-section">
+            <button class="menu-item danger" onclick="logout()">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <nav>
+        <a href="dashboard.html" class="nav-item">Dashboard</a>
+        <a href="project.html" class="nav-item active">Projects</a>
+        <a href="notes.html" class="nav-item">Notes</a>
+        <a href="teams.html" class="nav-item">Teams</a>
+        <a href="profile.html" class="nav-item">Profile</a>
+        <a href="settings.html" class="nav-item">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- Project header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+        <div>
+          <h2 style="margin:0 0 4px;">Byteforgenet Web</h2>
+          <small style="color:#aaa;">Landing • Auth • Dashboard &nbsp;·&nbsp;
+            <span id="taskCountBadge" style="color:#4f8cff;">0 tasks</span>
+          </small>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <span class="perm" id="permBadge">OWNER</span>
+          <button class="ghost small" id="settingsBtn" style="font-size:13px;">Settings</button>
+        </div>
+      </div>
+
+      <!-- Project stats -->
+      <div style="display:flex;gap:16px;margin-bottom:28px;flex-wrap:wrap;">
+        <div class="stat-card" style="flex:1;min-width:120px;">
+          <h3>Status</h3><strong style="color:#86efac;">Active</strong>
+        </div>
+        <div class="stat-card" style="flex:1;min-width:120px;">
+          <h3>Type</h3><strong>Web</strong>
+        </div>
+        <div class="stat-card" style="flex:1;min-width:120px;">
+          <h3>Updated</h3><strong>Today</strong>
+        </div>
+        <div class="stat-card" style="flex:1;min-width:120px;">
+          <h3>Done</h3><strong id="doneCount">0</strong>
+        </div>
+      </div>
+
+      <!-- Kanban Board -->
+      <div class="kanban-board">
+
+        <!-- TO DO -->
+        <div class="kanban-col col-todo" data-col="todo" id="col-todo" ondragover="onDragOver(event)"
+          ondrop="onDrop(event,'todo')" ondragleave="onDragLeave(event)">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">To Do</span>
+            <span class="col-count" id="count-todo">0</span>
+          </div>
+          <div class="kanban-cards" id="cards-todo"></div>
+          <button class="kanban-add-btn" onclick="openAddModal('todo')">+ Add task</button>
+        </div>
+
+        <!-- IN PROGRESS -->
+        <div class="kanban-col col-inprog" data-col="inprog" id="col-inprog" ondragover="onDragOver(event)"
+          ondrop="onDrop(event,'inprog')" ondragleave="onDragLeave(event)">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">In Progress</span>
+            <span class="col-count" id="count-inprog">0</span>
+          </div>
+          <div class="kanban-cards" id="cards-inprog"></div>
+          <button class="kanban-add-btn" onclick="openAddModal('inprog')">+ Add task</button>
+        </div>
+
+        <!-- DONE -->
+        <div class="kanban-col col-done" data-col="done" id="col-done" ondragover="onDragOver(event)"
+          ondrop="onDrop(event,'done')" ondragleave="onDragLeave(event)">
+          <div class="kanban-col-header">
+            <span class="kanban-col-title">Done</span>
+            <span class="col-count" id="count-done">0</span>
+          </div>
+          <div class="kanban-cards" id="cards-done"></div>
+          <button class="kanban-add-btn" onclick="openAddModal('done')">+ Add task</button>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ADD TASK MODAL -->
+  <div class="modal hidden" id="taskModal">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h3>New Task</h3>
+      <input id="taskInput" placeholder="Task name…" style="margin-bottom:14px;" />
+
+      <label
+        style="font-size:12px;color:#9aa3b2;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;">Priority</label>
+      <div class="prio-btn-row">
+        <button class="prio-btn" data-prio="Low">Low</button>
+        <button class="prio-btn active" data-prio="Med">Med</button>
+        <button class="prio-btn" data-prio="High">High</button>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px;">
+        <button class="ghost" onclick="closeModal()">Cancel</button>
+        <button class="primary small" onclick="addTask()">Add Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHORTCUT HELP OVERLAY -->
+  <div class="modal hidden" id="shortcutModal">
+    <div class="modal-card" onclick="event.stopPropagation()" style="width:440px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;">Keyboard Shortcuts</h3>
+        <button onclick="document.getElementById('shortcutModal').classList.add('hidden')"
+          style="background:none;border:none;color:#777;font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div id="shortcutList"></div>
+    </div>
+  </div>
+
+  <!-- =================== SCRIPTS =================== -->
+  <script type="module">
+    import { auth } from "./firebase.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+    import { toast } from "./shared.js";
+
+    /* ===== AUTH ===== */
+    onAuthStateChanged(auth, user => {
+      if (!user) return;
+      const name = user.displayName || user.email?.split("@")[0] || "User";
+      document.getElementById("topbarName").textContent = name;
+      const av = document.getElementById("topbarAvatar");
+      if (user.photoURL) {
+        av.innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/><span class="online-dot"></span>`;
+      } else {
+        av.innerHTML = `${name.charAt(0).toUpperCase()}<span class="online-dot"></span>`;
+      }
+      const role = localStorage.getItem("bf_role") || "member";
+      const badge = document.getElementById("roleBadge");
+      badge.textContent = role.toUpperCase();
+      badge.classList.add(role === "admin" ? "role-admin" : "role-member");
+    });
+    window.logout = () => {
+      import("https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js").then(({ signOut }) => {
+        signOut(auth).then(() => { window.location.href = "login.html"; });
+      });
+    };
+
+    /* ===== DROPDOWNS ===== */
+    const profileBtn = document.getElementById("profileBtn");
+    const profileMenu = document.getElementById("profileMenu");
+    const notifBtn = document.getElementById("notifBtn");
+    const notifMenu = document.getElementById("notifMenu");
+    profileBtn.onclick = e => { e.stopPropagation(); profileMenu.classList.toggle("hidden"); notifMenu.classList.add("hidden"); };
+    notifBtn.onclick = e => { e.stopPropagation(); notifMenu.classList.toggle("hidden"); profileMenu.classList.add("hidden"); };
+    document.onclick = () => { profileMenu.classList.add("hidden"); notifMenu.classList.add("hidden"); };
+
+    const notifs = JSON.parse(localStorage.getItem("bf_notifications") || "[]");
+    document.getElementById("notifCount").textContent = notifs.length;
+    document.getElementById("notifList").innerHTML = notifs.length
+      ? notifs.map(n => `<div class="notif-item">${n.text}</div>`).join("")
+      : `<div style="color:#777;font-size:13px;padding:6px 0;">No notifications</div>`;
+
+    /* ===== PERMISSIONS ===== */
+    const PERM_KEY = "bf_project_perms";
+    if (!localStorage.getItem(PERM_KEY)) localStorage.setItem(PERM_KEY, JSON.stringify({ bf_web: { role: "owner" } }));
+    const myPerm = JSON.parse(localStorage.getItem(PERM_KEY))["bf_web"]?.role || "viewer";
+    document.getElementById("permBadge").textContent = myPerm.toUpperCase();
+
+    /* ===== THEME ===== */
+    const savedTheme = localStorage.getItem("bf_theme") || "dark";
+    if (savedTheme === "light") document.documentElement.classList.add("light-mode");
+    document.getElementById("themeToggle").textContent = savedTheme === "light" ? "☀️" : "🌙";
+    window.toggleTheme = function () {
+      const isLight = document.documentElement.classList.toggle("light-mode");
+      localStorage.setItem("bf_theme", isLight ? "light" : "dark");
+      document.getElementById("themeToggle").textContent = isLight ? "☀️" : "🌙";
+    };
+
+    /* ===== KANBAN DATA ===== */
+    const BOARD_KEY = "bf_kanban";
+
+    function loadBoard() {
+      return JSON.parse(localStorage.getItem(BOARD_KEY) || '{"todo":[],"inprog":[],"done":[]}');
+    }
+    function saveBoard(board) {
+      localStorage.setItem(BOARD_KEY, JSON.stringify(board));
+      // Also sync flat task list for dashboard
+      const allTasks = [...board.todo, ...board.inprog, ...board.done.map(t => ({ ...t, done: true }))];
+      localStorage.setItem("bf_tasks", JSON.stringify(allTasks));
+    }
+
+    function renderBoard() {
+      const board = loadBoard();
+      let total = 0;
+      ["todo", "inprog", "done"].forEach(col => {
+        const container = document.getElementById(`cards-${col}`);
+        const items = board[col] || [];
+        total += items.length;
+        container.innerHTML = "";
+        document.getElementById(`count-${col}`).textContent = items.length;
+
+        items.forEach(task => {
+          const card = document.createElement("div");
+          card.className = "kanban-card";
+          card.draggable = true;
+          card.dataset.id = task.id;
+          card.dataset.col = col;
+
+          card.innerHTML = `
+        <div class="kanban-card-top">
+          <span class="kanban-card-text">${task.text}</span>
+          <button class="kanban-delete" onclick="deleteTask(${task.id},'${col}');event.stopPropagation();" title="Delete">✕</button>
+        </div>
+        ${task.priority ? `<span class="prio-tag prio-${task.priority}">${task.priority}</span>` : ""}
+      `;
+
+          card.addEventListener("dragstart", onDragStart);
+          card.addEventListener("dragend", onDragEnd);
+          container.appendChild(card);
+        });
+      });
+
+      const doneCnt = (board.done || []).length;
+      document.getElementById("doneCount").textContent = doneCnt;
+      document.getElementById("taskCountBadge").textContent = `${total} task${total !== 1 ? "s" : ""}`;
+    }
+
+    /* ===== DRAG & DROP ===== */
+    let dragId = null;
+    let dragCol = null;
+
+    function onDragStart(e) {
+      dragId = parseInt(this.dataset.id);
+      dragCol = this.dataset.col;
+      this.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    }
+    function onDragEnd() {
+      this.classList.remove("dragging");
+      document.querySelectorAll(".kanban-col").forEach(c => c.classList.remove("drag-over"));
+    }
+
+    window.onDragOver = function (e) {
+      e.preventDefault();
+      e.currentTarget.classList.add("drag-over");
+    };
+    window.onDragLeave = function (e) {
+      e.currentTarget.classList.remove("drag-over");
+    };
+    window.onDrop = function (e, targetCol) {
+      e.preventDefault();
+      e.currentTarget.classList.remove("drag-over");
+      if (!dragId || dragCol === targetCol) return;
+
+      const board = loadBoard();
+      const task = board[dragCol].find(t => t.id === dragId);
+      if (!task) return;
+      board[dragCol] = board[dragCol].filter(t => t.id !== dragId);
+      board[targetCol].push(task);
+      saveBoard(board);
+
+      const activities = JSON.parse(localStorage.getItem("bf_activity") || "[]");
+      const colNames = { todo: "To Do", inprog: "In Progress", done: "Done" };
+      activities.unshift(`Moved "${task.text}" → ${colNames[targetCol]}`);
+      localStorage.setItem("bf_activity", JSON.stringify(activities.slice(0, 20)));
+
+      renderBoard();
+      if (targetCol === "done") toast(`"${task.text}" marked done! 🎉`, "success");
+    };
+
+    /* ===== ADD / DELETE ===== */
+    let currentCol = "todo";
+    let selectedPrio = "Med";
+
+    window.openAddModal = function (col) {
+      currentCol = col;
+      document.getElementById("taskInput").value = "";
+      document.getElementById("taskModal").classList.remove("hidden");
+      setTimeout(() => document.getElementById("taskInput").focus(), 80);
+    };
+    window.closeModal = function () {
+      document.getElementById("taskModal").classList.add("hidden");
+      document.getElementById("shortcutModal").classList.add("hidden");
+    };
+    document.getElementById("taskModal").onclick = closeModal;
+
+    // Priority buttons
+    document.querySelectorAll(".prio-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        selectedPrio = btn.dataset.prio;
+        document.querySelectorAll(".prio-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    window.addTask = function () {
+      const text = document.getElementById("taskInput").value.trim();
+      if (!text) { toast("Enter a task name!", "error"); return; }
+
+      const board = loadBoard();
+      const task = { id: Date.now(), text, priority: selectedPrio };
+      board[currentCol].push(task);
+      saveBoard(board);
+
+      const activities = JSON.parse(localStorage.getItem("bf_activity") || "[]");
+      activities.unshift(`Added task "${text}"`);
+      localStorage.setItem("bf_activity", JSON.stringify(activities.slice(0, 20)));
+
+      closeModal();
+      renderBoard();
+      toast(`Task "${text}" added!`, "success");
+    };
+
+    window.deleteTask = function (id, col) {
+      const board = loadBoard();
+      const task = board[col].find(t => t.id === id);
+      board[col] = board[col].filter(t => t.id !== id);
+      saveBoard(board);
+      renderBoard();
+      if (task) toast(`"${task.text}" deleted.`, "info");
+    };
+
+    /* ===== KEYBOARD SHORTCUTS ===== */
+    const SHORTCUTS = [
+      { key: "N", desc: "Add task to To Do column" },
+      { key: "Ctrl+K", desc: "Focus global search" },
+      { key: "?", desc: "Show this help overlay" },
+      { key: "Esc", desc: "Close any open modal" },
+    ];
+    const shortcutLst = document.getElementById("shortcutList");
+    SHORTCUTS.forEach(s => {
+      shortcutLst.innerHTML += `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <span style="color:#aaa;font-size:14px;">${s.desc}</span>
+      <kbd style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;
+           padding:3px 10px;font-size:12px;font-family:monospace;">${s.key}</kbd>
+    </div>`;
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "?" || e.key === "/") {
+        e.preventDefault();
+        document.getElementById("shortcutModal").classList.remove("hidden");
+      }
+      if (e.key === "Escape") closeModal();
+      if (e.key === "n" || e.key === "N") openAddModal("todo");
+    });
+
+    /* ===== INIT ===== */
+    renderBoard();
+  </script>
+
+  <script type="module" src="authGuard.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard | Byteforgenet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./style.css" />
+  <script type="module" src="layout.js"></script>
+  <style>
+    .greeting-section {
+      margin-bottom: 36px;
+    }
+
+    .greeting-section h2 {
+      font-size: 28px;
+      margin: 0 0 4px;
+    }
+
+    .greeting-section p {
+      color: #888;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .greeting-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+    }
+
+    .search-bar {
+      padding: 10px 16px;
+      border-radius: 10px;
+      background: rgba(20, 20, 26, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      width: 260px;
+    }
+
+    .search-bar:focus {
+      outline: none;
+      border-color: #4f8cff;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-card {
+      background: #131318;
+      border: 1px solid rgba(96, 165, 250, 0.2);
+      border-radius: 20px;
+      padding: 28px 32px;
+      width: 400px;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-card h3 {
+      margin: 0 0 18px;
+      font-size: 18px;
+    }
+
+    /* note preview mini */
+    .note-preview {
+      padding: 12px 14px;
+      border-radius: 12px;
+      border-left: 3px solid #4f8cff;
+      background: rgba(79, 140, 255, 0.06);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .note-preview:hover {
+      background: rgba(79, 140, 255, 0.12);
+    }
+
+    .note-preview strong {
+      font-size: 13px;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .note-preview span {
+      font-size: 12px;
+      color: #888;
+    }
+
+
+
+    .toast-container {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 9999;
+    }
+
+    .toast {
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      background: #1a1a2a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      animation: slideUp 0.3s ease;
+      max-width: 320px;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .toast.success {
+      border-color: rgba(34, 197, 94, 0.4);
+      color: #86efac;
+    }
+
+    .toast.error {
+      border-color: rgba(248, 113, 113, 0.4);
+      color: #f87171;
+    }
+
+    .toast.info {
+      border-color: rgba(79, 140, 255, 0.4);
+      color: #93c5fd;
+    }
+  </style>
+</head>
+
+<body class="auth-bg">
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 class="app-logo">Byteforgenet</h1>
+      <div class="search-wrap" id="searchWrap" style="display:none;">
+        <input class="search-bar" id="globalSearch" placeholder="Search projects, tasks…" />
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button id="themeToggle" title="Toggle theme"
+        style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;">🌙</button>
+
+      <div class="notif-wrap" id="notifBtn">
+        <div class="bell"></div>
+        <span class="notif-count" id="notifCount">0</span>
+        <div class="notif-menu hidden" id="notifMenu">
+          <h4>Notifications</h4>
+          <div id="notifList"></div>
+        </div>
+      </div>
+
+      <div class="profile" id="profileBtn">
+        <div class="user-text">
+          <span class="username" id="topbarName">—</span>
+          <span class="role-badge" id="roleBadge"></span>
+        </div>
+        <div class="avatar" id="topbarAvatar"><span class="online-dot"></span></div>
+        <div class="profile-menu hidden" id="profileMenu">
+          <div class="menu-section">
+            <button class="menu-item" onclick="location.href='profile.html'">Profile</button>
+            <button class="menu-item" onclick="location.href='teams.html'">Teams</button>
+            <button class="menu-item" onclick="location.href='settings.html'">Settings</button>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-section">
+            <button class="menu-item danger" onclick="logout()">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <nav>
+        <a href="dashboard.html" class="nav-item active">Dashboard</a>
+        <a href="project.html" class="nav-item">Projects</a>
+        <a href="notes.html" class="nav-item">Notes</a>
+        <a href="teams.html" class="nav-item">Teams</a>
+        <a href="profile.html" class="nav-item">Profile</a>
+        <a href="settings.html" class="nav-item">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- GREETING -->
+      <div class="greeting-section">
+        <div class="greeting-row">
+          <h2 id="greeting">Good morning 👋</h2>
+          <span class="streak-badge" id="streakBadge">🔥 1 day streak</span>
+        </div>
+        <p id="todayDate"></p>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="quick-actions">
+        <button class="primary small" id="createProjectBtn">＋ Create Project</button>
+        <button class="ghost small" onclick="location.href='project.html'">Open Kanban</button>
+        <button class="ghost small" onclick="location.href='notes.html'">New Note</button>
+        <button class="ghost small" onclick="location.href='teams.html'">Invite Member</button>
+      </div>
+
+      <!-- STATS GRID -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3>Projects</h3>
+          <strong id="statProjects">0</strong>
+        </div>
+        <div class="stat-card">
+          <h3>Total Tasks</h3>
+          <strong id="statTasks">0</strong>
+        </div>
+        <div class="stat-card">
+          <h3>Completed</h3>
+          <strong id="statDone">0</strong>
+        </div>
+        <div class="stat-card">
+          <h3>Productivity</h3>
+          <strong id="statProductivity">0%</strong>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN GRIDS -->
+      <div class="dash-grid">
+
+        <!-- TODAY'S TASKS -->
+        <section class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 style="margin:0;font-size:17px;">Today's Tasks</h2>
+            <a href="project.html" style="font-size:13px;color:#4f8cff;text-decoration:none;">View board →</a>
+          </div>
+          <div id="todayTasks">
+            <p style="color:#555;font-size:13px;">No tasks yet.</p>
+          </div>
+        </section>
+
+        <!-- NOTES PREVIEW -->
+        <section class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 style="margin:0;font-size:17px;">Recent Notes</h2>
+            <a href="notes.html" style="font-size:13px;color:#4f8cff;text-decoration:none;">All notes →</a>
+          </div>
+          <div id="notesPreview">
+            <p style="color:#555;font-size:13px;">No notes yet.</p>
+          </div>
+        </section>
+
+        <!-- RECENT PROJECTS -->
+        <section class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 style="margin:0;font-size:17px;">Recent Projects</h2>
+            <button class="ghost small" style="font-size:12px;" id="createProjectBtn2">＋ New</button>
+          </div>
+          <div id="recentProjects">
+            <p style="color:#555;font-size:13px;">No projects yet.</p>
+          </div>
+        </section>
+
+        <!-- ACTIVITY FEED -->
+        <section class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 style="margin:0;font-size:17px;">Recent Activity</h2>
+            <button class="ghost small" style="font-size:12px;" onclick="clearActivity()">Clear</button>
+          </div>
+          <div id="activityFeed">
+            <p style="color:#555;font-size:13px;">No activity yet.</p>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- CREATE PROJECT MODAL -->
+  <div class="modal hidden" id="projectModal">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h3>New Project</h3>
+      <input id="projectName" placeholder="Project name" />
+      <input id="projectType" placeholder="Type (Web, Mobile, API…)" style="margin-bottom:16px;" />
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button class="ghost" onclick="closeModal()">Cancel</button>
+        <button class="primary small" onclick="createProject()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHORTCUT OVERLAY -->
+  <div class="modal hidden" id="shortcutModal">
+    <div class="modal-card" onclick="event.stopPropagation()" style="width:440px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <h3 style="margin:0;">Keyboard Shortcuts</h3>
+        <button onclick="document.getElementById('shortcutModal').classList.add('hidden')"
+          style="background:none;border:none;color:#777;font-size:20px;cursor:pointer;">✕</button>
+      </div>
+      <div id="shortcutList"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth } from "./firebase.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
+    /* ===== TOAST ===== */
+    function showToast(msg, type = "success") {
+      const c = document.getElementById("toastContainer");
+      const t = document.createElement("div");
+      t.className = `toast ${type}`;
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 3200);
+    }
+
+    /* ===== THEME ===== */
+    const savedTheme = localStorage.getItem("bf_theme") || "dark";
+    if (savedTheme === "light") document.documentElement.classList.add("light-mode");
+    document.getElementById("themeToggle").textContent = savedTheme === "light" ? "☀️" : "🌙";
+    document.getElementById("themeToggle").onclick = function () {
+      const isLight = document.documentElement.classList.toggle("light-mode");
+      localStorage.setItem("bf_theme", isLight ? "light" : "dark");
+      this.textContent = isLight ? "☀️" : "🌙";
+    };
+
+    /* ===== GREETING + DATE ===== */
+    const now = new Date();
+    const hour = now.getHours();
+    const timeGreet = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+
+    const dateStr = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    document.getElementById("todayDate").textContent = dateStr;
+
+    /* ===== STREAK ===== */
+    function updateStreak() {
+      const today = new Date().toDateString();
+      const lastLogin = localStorage.getItem("bf_last_login");
+      let streak = parseInt(localStorage.getItem("bf_streak") || "0");
+      if (lastLogin === today) {
+        // same day — keep streak
+      } else if (lastLogin === new Date(Date.now() - 86400000).toDateString()) {
+        streak++;
+        localStorage.setItem("bf_streak", streak);
+        localStorage.setItem("bf_last_login", today);
+      } else {
+        streak = 1;
+        localStorage.setItem("bf_streak", 1);
+        localStorage.setItem("bf_last_login", today);
+      }
+      document.getElementById("streakBadge").textContent = `🔥 ${streak} day${streak !== 1 ? "s" : ""} streak`;
+    }
+    updateStreak();
+
+    /* ===== AUTH ===== */
+    onAuthStateChanged(auth, user => {
+      if (!user) return;
+      const name = user.displayName || user.email?.split("@")[0] || "User";
+      document.getElementById("greeting").innerHTML = `Good ${timeGreet}, ${name} 👋`;
+      document.getElementById("topbarName").textContent = name;
+
+      const av = document.getElementById("topbarAvatar");
+      if (user.photoURL) {
+        av.innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/><span class="online-dot"></span>`;
+      } else {
+        av.innerHTML = `${name.charAt(0).toUpperCase()}<span class="online-dot"></span>`;
+      }
+      const role = localStorage.getItem("bf_role") || "member";
+      const badge = document.getElementById("roleBadge");
+      badge.textContent = role.toUpperCase();
+      badge.classList.add(role === "admin" ? "role-admin" : "role-member");
+    });
+
+    window.logout = () => {
+      import("https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js").then(({ signOut }) => {
+        signOut(auth).then(() => window.location.href = "login.html");
+      });
+    };
+
+    /* ===== DROPDOWNS ===== */
+    const profileBtn = document.getElementById("profileBtn");
+    const profileMenu = document.getElementById("profileMenu");
+    const notifBtn = document.getElementById("notifBtn");
+    const notifMenu = document.getElementById("notifMenu");
+    profileBtn.onclick = e => { e.stopPropagation(); profileMenu.classList.toggle("hidden"); notifMenu.classList.add("hidden"); };
+    notifBtn.onclick = e => { e.stopPropagation(); notifMenu.classList.toggle("hidden"); profileMenu.classList.add("hidden"); };
+    document.onclick = () => { profileMenu.classList.add("hidden"); notifMenu.classList.add("hidden"); };
+
+    const notifs = JSON.parse(localStorage.getItem("bf_notifications") || "[]");
+    document.getElementById("notifCount").textContent = notifs.length;
+    document.getElementById("notifList").innerHTML = notifs.length
+      ? notifs.map(n => `<div class="notif-item">${n.text}</div>`).join("")
+      : `<div style="color:#777;font-size:13px;padding:6px 0;">No notifications</div>`;
+
+    /* ===== STATS ===== */
+    function animateCount(el, target) {
+      let n = 0;
+      const step = Math.max(1, Math.floor(target / 30));
+      const int = setInterval(() => {
+        n = Math.min(n + step, target);
+        el.textContent = n;
+        if (n >= target) clearInterval(int);
+      }, 30);
+    }
+
+    function loadStats() {
+      const board = JSON.parse(localStorage.getItem("bf_kanban") || '{"todo":[],"inprog":[],"done":[]}');
+      const projs = JSON.parse(localStorage.getItem("bf_projects") || "[]");
+      const all = [...(board.todo || []), ...(board.inprog || []), ...(board.done || [])];
+      const done = (board.done || []).length;
+      const total = all.length;
+      const pct = total > 0 ? Math.round(done / total * 100) : 0;
+
+      animateCount(document.getElementById("statProjects"), projs.length);
+      animateCount(document.getElementById("statTasks"), total);
+      animateCount(document.getElementById("statDone"), done);
+
+      document.getElementById("statProductivity").textContent = pct + "%";
+      setTimeout(() => { document.getElementById("progressFill").style.width = pct + "%"; }, 200);
+    }
+    loadStats();
+
+    /* ===== TODAY'S TASKS ===== */
+    function loadTodayTasks() {
+      const board = JSON.parse(localStorage.getItem("bf_kanban") || '{"todo":[],"inprog":[],"done":[]}');
+      const allTasks = [
+        ...(board.todo || []).map(t => ({ ...t, col: "todo" })),
+        ...(board.inprog || []).map(t => ({ ...t, col: "inprog" })),
+        ...(board.done || []).map(t => ({ ...t, col: "done" })),
+      ];
+      const container = document.getElementById("todayTasks");
+      if (!allTasks.length) { container.innerHTML = `<p style="color:#555;font-size:13px;">No tasks yet. <a href="project.html" style="color:#4f8cff">Open board →</a></p>`; return; }
+
+      const prioColors = { High: "#93c5fd", Med: "#6b7280", Low: "#4a4a5a" };
+      const colLabels = { todo: "To Do", inprog: "In Progress", done: "Done" };
+      const colColors = { todo: "#6b7280", inprog: "#93c5fd", done: "#4f8cff" };
+
+      container.innerHTML = allTasks.slice(0, 6).map(t => `
+    <div class="mini-project" style="cursor:default;">
+      <span style="flex:1;">
+        ${t.text}
+        ${t.priority ? `<span style="margin-left:8px;font-size:10px;font-weight:700;color:${prioColors[t.priority] || '#aaa'};">${t.priority}</span>` : ""}
+      </span>
+      <span style="font-size:11px;color:${colColors[t.col] || '#aaa'};">${colLabels[t.col]}</span>
+    </div>
+  `).join("") + (allTasks.length > 6 ? `<p style="color:#555;font-size:12px;margin-top:8px;">+${allTasks.length - 6} more — <a href="project.html" style="color:#4f8cff;">view board</a></p>` : "");
+    }
+    loadTodayTasks();
+
+    /* ===== NOTES PREVIEW ===== */
+    function loadNotesPreview() {
+      const notes = JSON.parse(localStorage.getItem("bf_notes") || "[]");
+      const container = document.getElementById("notesPreview");
+      if (!notes.length) {
+        container.innerHTML = `<p style="color:#555;font-size:13px;">No notes yet. <a href="notes.html" style="color:#4f8cff;">Create one →</a></p>`;
+        return;
+      }
+      container.innerHTML = notes.slice(-3).reverse().map(n => `
+    <div class="note-preview" onclick="location.href='notes.html'">
+      <strong>${escHtml(n.title || "Untitled")}</strong>
+      <span>${escHtml((n.body || "").substring(0, 60))}${n.body?.length > 60 ? "…" : ""}</span>
+    </div>
+  `).join("");
+    }
+    loadNotesPreview();
+    function escHtml(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    /* ===== PROJECTS ===== */
+    function loadProjects() {
+      const projs = JSON.parse(localStorage.getItem("bf_projects") || "[]");
+      const container = document.getElementById("recentProjects");
+      if (!projs.length) {
+        container.innerHTML = `<p style="color:#555;font-size:13px;">No projects yet.</p>`;
+        return;
+      }
+      container.innerHTML = projs.slice(-4).reverse().map(p => `
+    <div class="mini-project" onclick="location.href='project.html'" style="cursor:pointer;">
+      <div>
+        <span style="font-weight:600;">${escHtml(p.name)}</span>
+        <span style="margin-left:10px;font-size:12px;color:#666;">${escHtml(p.type || "")}</span>
+      </div>
+      <span style="font-size:12px;color:#86efac;">Active</span>
+    </div>
+  `).join("");
+    }
+    loadProjects();
+
+    /* ===== ACTIVITY ===== */
+    function loadActivity() {
+      const acts = JSON.parse(localStorage.getItem("bf_activity") || "[]");
+      const container = document.getElementById("activityFeed");
+      if (!acts.length) { container.innerHTML = `<p style="color:#555;font-size:13px;">No activity yet.</p>`; return; }
+      container.innerHTML = acts.slice(0, 8).map(a => `
+    <div class="activity" style="border-bottom:1px solid rgba(255,255,255,0.05);padding:9px 0;">
+      <span style="margin-right:8px;">📌</span>${escHtml(a)}
+    </div>
+  `).join("");
+    }
+    loadActivity();
+
+    window.clearActivity = function () {
+      localStorage.removeItem("bf_activity");
+      loadActivity();
+    };
+
+    /* ===== CREATE PROJECT MODAL ===== */
+    window.closeModal = function () {
+      document.getElementById("projectModal").classList.add("hidden");
+      document.getElementById("shortcutModal").classList.add("hidden");
+    };
+    document.getElementById("projectModal").onclick = closeModal;
+
+    function openProjectModal() { document.getElementById("projectModal").classList.remove("hidden"); }
+    document.getElementById("createProjectBtn").onclick = openProjectModal;
+    document.getElementById("createProjectBtn2").onclick = openProjectModal;
+
+    window.createProject = function () {
+      const name = document.getElementById("projectName").value.trim();
+      const type = document.getElementById("projectType").value.trim();
+      if (!name) { showToast("Enter a project name!", "error"); return; }
+
+      const projs = JSON.parse(localStorage.getItem("bf_projects") || "[]");
+      projs.push({ id: Date.now(), name, type });
+      localStorage.setItem("bf_projects", JSON.stringify(projs));
+
+      const activities = JSON.parse(localStorage.getItem("bf_activity") || "[]");
+      activities.unshift(`Created project "${name}"`);
+      localStorage.setItem("bf_activity", JSON.stringify(activities.slice(0, 20)));
+
+      document.getElementById("projectName").value = "";
+      document.getElementById("projectType").value = "";
+      closeModal();
+      loadStats();
+      loadProjects();
+      loadActivity();
+      showToast(`"${name}" created!`, "success");
+    };
+
+    /* ===== SEARCH ===== */
+    const searchWrap = document.getElementById("searchWrap");
+    const searchInput = document.getElementById("globalSearch");
+    document.addEventListener("keydown", e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        searchWrap.style.display = "flex";
+        searchInput.focus();
+      }
+      if (e.key === "Escape") {
+        closeModal();
+        searchInput.blur();
+      }
+      if (!e.target.closest("input,textarea") && (e.key === "?" || e.key === "/")) {
+        e.preventDefault();
+        document.getElementById("shortcutModal").classList.remove("hidden");
+      }
+    });
+
+    /* ===== SHORTCUTS OVERLAY ===== */
+    const SHORTCUTS = [
+      ["Ctrl+K", "Focus search"],
+      ["N", "New project (from this page)"],
+      ["?", "Show this help overlay"],
+      ["Esc", "Close any open modal"],
+    ];
+    document.getElementById("shortcutList").innerHTML = SHORTCUTS.map(([k, d]) => `
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+    <span style="color:#aaa;font-size:14px;">${d}</span>
+    <kbd style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:3px 10px;font-size:12px;font-family:monospace;">${k}</kbd>
+  </div>`).join("");
+  </script>
+
+  <script type="module" src="authGuard.js"></script>
+
+</body>
+
+</html>

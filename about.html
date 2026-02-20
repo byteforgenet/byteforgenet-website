@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>About | Byteforgenet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description"
+        content="Learn about Byteforgenet — a modern project management SaaS built for structured teams." />
+    <link rel="stylesheet" href="./style.css" />
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont;
+            background: radial-gradient(70% 55% at 50% 0%, rgba(96, 165, 250, 0.12), #0d0d0d 55%), linear-gradient(180deg, #0d0d0d, #000);
+            color: #e5e5e5;
+            min-height: 100vh;
+        }
+
+        /* ── NAV ── */
+        .pub-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(12, 12, 16, 0.55);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .pub-nav-inner {
+            max-width: 1100px;
+            margin: auto;
+            padding: 0 32px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pub-logo {
+            font-size: 17px;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: -0.3px;
+        }
+
+        .pub-links {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+        }
+
+        .pub-links a {
+            font-size: 13px;
+            color: #9aa3b2;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .pub-links a:hover {
+            color: #fff;
+        }
+
+        .pub-links .pub-cta {
+            background: rgba(79, 140, 255, 0.15);
+            border: 1px solid rgba(79, 140, 255, 0.3);
+            color: #93c5fd;
+            padding: 7px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .pub-links .pub-cta:hover {
+            background: rgba(79, 140, 255, 0.25);
+            color: #fff;
+        }
+
+        /* ── HERO ── */
+        .pub-hero {
+            max-width: 860px;
+            margin: 80px auto 0;
+            padding: 0 32px;
+            text-align: center;
+        }
+
+        .pub-tag {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #4f8cff;
+            border: 1px solid rgba(79, 140, 255, 0.3);
+            background: rgba(79, 140, 255, 0.08);
+            padding: 5px 14px;
+            border-radius: 999px;
+            margin-bottom: 22px;
+        }
+
+        .pub-hero h1 {
+            font-size: clamp(32px, 5vw, 52px);
+            font-weight: 800;
+            margin: 0 0 18px;
+            line-height: 1.15;
+            letter-spacing: -1px;
+        }
+
+        .pub-hero p {
+            font-size: 16px;
+            color: #9aa3b2;
+            line-height: 1.65;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        /* ── CONTENT ── */
+        .pub-content {
+            max-width: 860px;
+            margin: 64px auto 80px;
+            padding: 0 32px;
+        }
+
+        .pub-card {
+            background: rgba(18, 18, 18, 0.92);
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            border-radius: 20px;
+            padding: 36px 40px;
+            margin-bottom: 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .pub-card h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 14px;
+            color: #fff;
+        }
+
+        .pub-card p,
+        .pub-card li {
+            font-size: 14px;
+            color: #9aa3b2;
+            line-height: 1.7;
+            margin: 0 0 10px;
+        }
+
+        .pub-card ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .pub-card li {
+            margin-bottom: 6px;
+        }
+
+        /* ── GRID ── */
+        .pub-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .pub-grid-card {
+            background: rgba(18, 18, 18, 0.92);
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            border-radius: 16px;
+            padding: 28px 24px;
+        }
+
+        .pub-grid-card .icon {
+            font-size: 28px;
+            margin-bottom: 14px;
+        }
+
+        .pub-grid-card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin: 0 0 8px;
+        }
+
+        .pub-grid-card p {
+            font-size: 13px;
+            color: #9aa3b2;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* ── FOOTER ── */
+        .pub-footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 28px 32px;
+            text-align: center;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .pub-footer a {
+            color: #666;
+            text-decoration: none;
+            margin: 0 8px;
+        }
+
+        .pub-footer a:hover {
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="pub-nav">
+        <div class="pub-nav-inner">
+            <a href="index.html" class="pub-logo">Byteforgenet</a>
+            <div class="pub-links">
+                <a href="about.html">About</a>
+                <a href="careers.html">Careers</a>
+                <a href="contact.html">Contact</a>
+                <a href="login.html" class="pub-cta">Sign In →</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="pub-hero">
+        <div class="pub-tag">About Us</div>
+        <h1>Built for teams who value clarity</h1>
+        <p>Byteforgenet is a modern project management platform engineered to help structured teams ship faster with
+            less friction.</p>
+    </div>
+
+    <div class="pub-content">
+
+        <div class="pub-grid">
+            <div class="pub-grid-card">
+                <div class="icon">🎯</div>
+                <h3>Our Mission</h3>
+                <p>To simplify project execution through clean design, smart role systems, and zero bloat.</p>
+            </div>
+            <div class="pub-grid-card">
+                <div class="icon">⚡</div>
+                <h3>Performance First</h3>
+                <p>Pure HTML, CSS, and Vanilla JS — no heavy frameworks, no unnecessary overhead.</p>
+            </div>
+            <div class="pub-grid-card">
+                <div class="icon">🔒</div>
+                <h3>Privacy Focused</h3>
+                <p>Your data lives in your browser. We use Firebase only for authentication.</p>
+            </div>
+        </div>
+
+        <div class="pub-card">
+            <h2>What is Byteforgenet?</h2>
+            <p>Byteforgenet is a full-featured SaaS project management tool designed with a minimal footprint. It gives
+                teams a Kanban board, a shared notes system, a team roster with role-based permissions, and a personal
+                dashboard — all wrapped in a clean dark UI.</p>
+            <p>We believe great tooling shouldn't require a 10MB JS bundle. Every feature in Byteforgenet is built from
+                first principles using standard web APIs.</p>
+        </div>
+
+        <div class="pub-card">
+            <h2>Technology Stack</h2>
+            <ul>
+                <li>Pure HTML5, CSS3, and Vanilla JavaScript — no frontend framework</li>
+                <li>Firebase Authentication for secure Google sign-in</li>
+                <li>Browser localStorage for persistent, private client-side data</li>
+                <li>HTML5 Drag and Drop API for the Kanban board</li>
+                <li>CSS custom properties for full theming support</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <footer class="pub-footer">
+        © 2026 Byteforgenet. All rights reserved.
+        <br style="margin-bottom:8px;" />
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="security.html">Security</a>
+        <a href="contact.html">Contact</a>
+    </footer>
+
+</body>
+
+</html>

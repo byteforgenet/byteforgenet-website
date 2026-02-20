@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Teams | Byteforgenet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./style.css" />
+  <script type="module" src="layout.js"></script>
+  <style>
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-card {
+      background: #131318;
+      border: 1px solid rgba(96, 165, 250, 0.2);
+      border-radius: 20px;
+      padding: 28px 32px;
+      width: 380px;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-card h3 {
+      margin: 0 0 18px;
+      font-size: 18px;
+    }
+
+    select {
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+
+<body class="auth-bg">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 class="app-logo">Byteforgenet</h1>
+    </div>
+    <div class="topbar-right">
+      <button id="themeToggle" title="Toggle theme"
+        style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;"
+        onclick="toggleTheme()">🌙</button>
+
+      <div class="notif-wrap" id="notifBtn">
+        <div class="bell"></div>
+        <span class="notif-count" id="notifCount">0</span>
+        <div class="notif-menu hidden" id="notifMenu">
+          <h4>Notifications</h4>
+          <div id="notifList"></div>
+        </div>
+      </div>
+
+      <div class="profile" id="profileBtn">
+        <div class="user-text">
+          <span class="username" id="topbarName">—</span>
+          <span class="role-badge" id="roleBadge"></span>
+        </div>
+        <div class="avatar" id="topbarAvatar"><span class="online-dot"></span></div>
+        <div class="profile-menu hidden" id="profileMenu">
+          <div class="menu-section">
+            <button class="menu-item" onclick="location.href='profile.html'">Profile</button>
+            <button class="menu-item" onclick="location.href='settings.html'">Settings</button>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-section">
+            <button class="menu-item danger" onclick="logout()">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <nav>
+        <a href="dashboard.html" class="nav-item">Dashboard</a>
+        <a href="project.html" class="nav-item">Projects</a>
+        <a href="notes.html" class="nav-item">Notes</a>
+        <a href="teams.html" class="nav-item active">Teams</a>
+        <a href="profile.html" class="nav-item">Profile</a>
+        <a href="settings.html" class="nav-item">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+        <div>
+          <h2 style="margin:0 0 4px;">Team</h2>
+          <p style="color:#777;font-size:13px;margin:0;"><span id="memberCount" style="color:#4f8cff;">0 members</span>
+          </p>
+        </div>
+        <button class="primary small" onclick="openInviteModal()">+ Invite Member</button>
+      </div>
+
+      <!-- Member grid -->
+      <div class="team-grid" id="teamGrid"></div>
+
+      <!-- Roles legend -->
+      <section class="panel" style="margin-top:28px;">
+        <h2 style="margin-top:0;font-size:16px;">Role Permissions</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;">
+          <div>
+            <strong style="color:#fbbf24;">Owner</strong>
+            <p style="font-size:13px;color:#777;margin:6px 0 0;">Full access — billing, settings, delete project</p>
+          </div>
+          <div>
+            <strong style="color:#93c5fd;">Admin</strong>
+            <p style="font-size:13px;color:#777;margin:6px 0 0;">Manage members, tasks, and project settings</p>
+          </div>
+          <div>
+            <strong style="color:#86efac;">Member</strong>
+            <p style="font-size:13px;color:#777;margin:6px 0 0;">Create and edit tasks, view project data</p>
+          </div>
+          <div>
+            <strong style="color:#aaa;">Viewer</strong>
+            <p style="font-size:13px;color:#777;margin:6px 0 0;">Read-only access to all project content</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- INVITE MODAL -->
+  <div class="modal hidden" id="inviteModal">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h3>Invite Member</h3>
+      <input id="inviteName" placeholder="Full name" />
+      <input id="inviteEmail" placeholder="Email address" />
+      <select id="inviteRole">
+        <option value="Admin">Admin</option>
+        <option value="Member" selected>Member</option>
+        <option value="Viewer">Viewer</option>
+      </select>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px;">
+        <button class="ghost" onclick="closeInviteModal()">Cancel</button>
+        <button class="primary small" onclick="inviteMember()">Invite</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth } from "./firebase.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+    import { toast } from "./shared.js";
+
+    /* AUTH */
+    onAuthStateChanged(auth, user => {
+      if (!user) return;
+      const name = user.displayName || user.email?.split("@")[0] || "User";
+      document.getElementById("topbarName").textContent = name;
+      const av = document.getElementById("topbarAvatar");
+      if (user.photoURL) {
+        av.innerHTML = `<img src="${user.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;"/><span class="online-dot"></span>`;
+      } else {
+        av.innerHTML = `${name.charAt(0).toUpperCase()}<span class="online-dot"></span>`;
+      }
+      const role = localStorage.getItem("bf_role") || "member";
+      const badge = document.getElementById("roleBadge");
+      badge.textContent = role.toUpperCase();
+      badge.classList.add(role === "admin" ? "role-admin" : "role-member");
+
+      // Seed yourself as owner if no team data yet
+      const TEAM_KEY = "bf_team";
+      if (!localStorage.getItem(TEAM_KEY)) {
+        const seed = [{ id: Date.now(), name, email: user.email || "", role: "Owner", photo: user.photoURL || "" }];
+        localStorage.setItem(TEAM_KEY, JSON.stringify(seed));
+      }
+      renderTeam();
+    });
+
+    window.logout = () => {
+      import("https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js").then(({ signOut }) => {
+        signOut(auth).then(() => window.location.href = "login.html");
+      });
+    };
+
+    /* DROPDOWNS */
+    const profileBtn = document.getElementById("profileBtn");
+    const profileMenu = document.getElementById("profileMenu");
+    const notifBtn = document.getElementById("notifBtn");
+    const notifMenu = document.getElementById("notifMenu");
+    profileBtn.onclick = e => { e.stopPropagation(); profileMenu.classList.toggle("hidden"); notifMenu.classList.add("hidden"); };
+    notifBtn.onclick = e => { e.stopPropagation(); notifMenu.classList.toggle("hidden"); profileMenu.classList.add("hidden"); };
+    document.onclick = () => { profileMenu.classList.add("hidden"); notifMenu.classList.add("hidden"); };
+    const notifs = JSON.parse(localStorage.getItem("bf_notifications") || "[]");
+    document.getElementById("notifCount").textContent = notifs.length;
+    document.getElementById("notifList").innerHTML = notifs.length
+      ? notifs.map(n => `<div class="notif-item">${n.text}</div>`).join("")
+      : `<div style="color:#777;font-size:13px;padding:6px 0;">No notifications</div>`;
+
+    /* THEME */
+    const savedTheme = localStorage.getItem("bf_theme") || "dark";
+    if (savedTheme === "light") document.documentElement.classList.add("light-mode");
+    document.getElementById("themeToggle").textContent = savedTheme === "light" ? "☀️" : "🌙";
+    window.toggleTheme = function () {
+      const isLight = document.documentElement.classList.toggle("light-mode");
+      localStorage.setItem("bf_theme", isLight ? "light" : "dark");
+      document.getElementById("themeToggle").textContent = isLight ? "☀️" : "🌙";
+    };
+
+    /* TEAM DATA */
+    const TEAM_KEY = "bf_team";
+    const roleColors = {
+      Owner: "#fbbf24",
+      Admin: "#93c5fd",
+      Member: "#86efac",
+      Viewer: "#9ca3af"
+    };
+    const avatarGradients = [
+      "135deg,#4f8cff,#a78bfa",
+      "135deg,#f87171,#fbbf24",
+      "135deg,#34d399,#4f8cff",
+      "135deg,#f472b6,#a78bfa",
+      "135deg,#fbbf24,#f87171",
+      "135deg,#60a5fa,#34d399",
+    ];
+
+    function renderTeam() {
+      const members = JSON.parse(localStorage.getItem(TEAM_KEY) || "[]");
+      const grid = document.getElementById("teamGrid");
+      grid.innerHTML = "";
+      document.getElementById("memberCount").textContent = `${members.length} member${members.length !== 1 ? "s" : ""}`;
+
+      members.forEach((m, i) => {
+        const card = document.createElement("div");
+        card.className = "team-card";
+
+        const av = m.photo
+          ? `<img src="${m.photo}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;" />`
+          : `<div class="team-avatar" style="background:linear-gradient(${avatarGradients[i % avatarGradients.length]});">${m.name.charAt(0).toUpperCase()}</div>`;
+
+        card.innerHTML = `
+      ${av}
+      <p class="team-name">${m.name}</p>
+      <span style="font-size:11px;color:${roleColors[m.role] || '#aaa'};">${m.role.toUpperCase()}</span>
+      ${m.email ? `<span class="team-role">${m.email}</span>` : ""}
+      ${m.role !== "Owner" ? `<button class="team-remove" onclick="removeMember(${m.id})">Remove</button>` : ""}
+    `;
+        grid.appendChild(card);
+      });
+    }
+
+    window.removeMember = function (id) {
+      const members = JSON.parse(localStorage.getItem(TEAM_KEY) || "[]");
+      const m = members.find(x => x.id === id);
+      const updated = members.filter(x => x.id !== id);
+      localStorage.setItem(TEAM_KEY, JSON.stringify(updated));
+      renderTeam();
+      if (m) toast(`${m.name} removed from team.`, "info");
+    };
+
+    /* INVITE MODAL */
+    window.openInviteModal = () => document.getElementById("inviteModal").classList.remove("hidden");
+    window.closeInviteModal = () => document.getElementById("inviteModal").classList.add("hidden");
+    document.getElementById("inviteModal").onclick = closeInviteModal;
+
+    window.inviteMember = function () {
+      const name = document.getElementById("inviteName").value.trim();
+      const email = document.getElementById("inviteEmail").value.trim();
+      const role = document.getElementById("inviteRole").value;
+      if (!name) { toast("Enter member name!", "error"); return; }
+
+      const members = JSON.parse(localStorage.getItem(TEAM_KEY) || "[]");
+      members.push({ id: Date.now(), name, email, role, photo: "" });
+      localStorage.setItem(TEAM_KEY, JSON.stringify(members));
+
+      const activities = JSON.parse(localStorage.getItem("bf_activity") || "[]");
+      activities.unshift(`Invited ${name} as ${role}`);
+      localStorage.setItem("bf_activity", JSON.stringify(activities.slice(0, 20)));
+
+      document.getElementById("inviteName").value = "";
+      document.getElementById("inviteEmail").value = "";
+      closeInviteModal();
+      renderTeam();
+      toast(`${name} invited as ${role}!`, "success");
+    };
+  </script>
+
+  <script type="module" src="authGuard.js"></script>
+
+</body>
+
+</html>
