@@ -1,120 +1,186 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8" />
-<title>Login | Byteforgenet</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="./style.css" />
-<style>
-.divider {
-margin: 20px 0;
-}
-input[type="email"] {
-margin-top: 10px;
-}
-</style>
+  <meta charset="UTF-8" />
+  <title>Login | Byteforgenet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./style.css?v=1772010732774" />
+  <style>
+    .divider {
+      margin: 20px 0;
+    }
+
+    input[type="email"] {
+      margin-top: 10px;
+    }
+  </style>
 </head>
+
 <body class="auth-bg">
-<div class="login-card">
-<h2>Welcome back</h2>
-<p class="subtitle">Sign in to continue to Byteforgenet</p>
 
-<button type="button" class="oauth google" id="googleLogin">
-<img src="https://www.svgrepo.com/show/475656/google-color.svg"
-width="18" height="18"
-style="margin-right:8px;" />
-Continue with Google
-</button>
+  <!-- CURSOR GLOW -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <script>
+    const cursorGlow = document.getElementById("cursorGlow");
+    document.addEventListener("mousemove", (e) => {
+      requestAnimationFrame(() => {
+        cursorGlow.style.transform = `translate(${e.clientX - 400}px, ${e.clientY - 400}px)`;
+      });
+    });
+  </script>
 
-<button type="button" class="oauth apple" id="appleLogin">
-<svg viewBox="0 0 384 512" width="18" height="18" style="margin-right:8px;">
-<path fill="white"
-d="M318.7 268.6c-.3-39.9 17.7-70 55.4-92.5-21.1-30.8-52.9-47.7-94.9-51-39.9-3.2-83.6 23.2-99.7 23.2-17 0-56.8-22.2-88.1-21.6-40.5.6-78.4 23.6-99.2 59.8-42.7 73.9-10.9 182.6 30.7 242.6 20.5 29.4 44.7 62.4 76.6 61.2 30.6-1.2 42.2-19.6 79.3-19.6 36.9 0 47.3 19.6 79.9 18.9 33.2-.6 54.2-30 74.5-59.6 23.6-34.5 33.3-68.1 33.7-69.9-.7-.3-64.5-24.8-65.1-98.5zM255.4 89.5c16.9-20.6 28.3-49.2 25.2-77.5-24.4 1-54 16.3-71.5 36.9-15.7 18.3-29.4 47.5-25.7 75.6 27.3 2.1 55.1-13.9 72-35z"/>
-</svg>
-Continue with Apple
-</button>
+  <div class="login-card">
+    <h2>Welcome back</h2>
+    <p class="subtitle">Sign in to continue to Byteforgenet</p>
 
-<div class="divider">or</div>
+    <button type="button" class="oauth google" id="googleLogin">
+      <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="18" height="18"
+        style="margin-right:8px;" />
+      Continue with Google
+    </button>
 
-<input type="email" name="email" placeholder="Email" required />
-<input type="password" name="password" placeholder="Password" required />
+    <button type="button" class="oauth apple" id="appleLogin">
+      <svg viewBox="0 0 384 512" width="18" height="18" style="margin-right:8px;">
+        <path fill="white"
+          d="M318.7 268.6c-.3-39.9 17.7-70 55.4-92.5-21.1-30.8-52.9-47.7-94.9-51-39.9-3.2-83.6 23.2-99.7 23.2-17 0-56.8-22.2-88.1-21.6-40.5.6-78.4 23.6-99.2 59.8-42.7 73.9-10.9 182.6 30.7 242.6 20.5 29.4 44.7 62.4 76.6 61.2 30.6-1.2 42.2-19.6 79.3-19.6 36.9 0 47.3 19.6 79.9 18.9 33.2-.6 54.2-30 74.5-59.6 23.6-34.5 33.3-68.1 33.7-69.9-.7-.3-64.5-24.8-65.1-98.5zM255.4 89.5c16.9-20.6 28.3-49.2 25.2-77.5-24.4 1-54 16.3-71.5 36.9-15.7 18.3-29.4 47.5-25.7 75.6 27.3 2.1 55.1-13.9 72-35z" />
+      </svg>
+      Continue with Apple
+    </button>
 
-<button type="button" class="primary" id="emailLogin">
-Login
-</button>
+    <div class="divider">or</div>
 
-<p class="footer">
-Don't have an account?
-<span id="signupLink" style="cursor:pointer; color:#4f8cff;">
-Create one
-</span>
-</p>
-</div>
+    <input type="email" name="email" placeholder="Email" required />
+    <input type="password" name="password" placeholder="Password" required />
 
-<script type="module">
-import { auth } from "./firebase.js";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+    <button type="button" class="primary" id="emailLogin">
+      Login
+    </button>
 
-/* Redirect if already logged in */
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    window.location.replace("dashboard.html");
-  }
-});
+    <p class="footer">
+      Don't have an account?
+      <span id="signupLink" style="cursor:pointer; color:#4f8cff;">
+        Create one
+      </span>
+    </p>
+  </div>
 
-/* EMAIL LOGIN */
-document.getElementById("emailLogin").addEventListener("click", async () => {
-  const email = document.querySelector("input[name='email']").value;
-  const password = document.querySelector("input[name='password']").value;
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const introHTML = `
+      <div id="globalIntroOverlay">
+        <div class="intro-container">
+          <div class="logo-sphere">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+            <div class="core"></div>
+          </div>
+          <div class="intro-text-box">
+            <div><span id="introTypewriter" class="intro-typewriter-text"></span><span class="intro-caret" id="introCaret"></span></div>
+          </div>
+        </div>
+      </div>
+    `;
+      document.body.insertAdjacentHTML("afterbegin", introHTML);
 
-  if (!email || !password) {
-    alert("Please enter email and password");
-    return;
-  }
+      const introOverlay = document.getElementById("globalIntroOverlay");
+      const twElement = document.getElementById("introTypewriter");
+      const introCaret = document.getElementById("introCaret");
 
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    window.location.replace("dashboard.html");
-  } catch (err) {
-    alert(err.message);
-  }
-});
+      document.body.style.overflow = "hidden";
 
-/* GOOGLE LOGIN (ONLY CHANGE HERE) */
-document.getElementById("googleLogin").addEventListener("click", async () => {
-  const provider = new GoogleAuthProvider();
-  await signInWithPopup(auth, provider);
-  window.location.replace("dashboard.html");
-});
+      const fullText = "byteforgenet";
+      let twIndex = 0;
 
-/* SIGNUP */
-document.getElementById("signupLink").addEventListener("click", async () => {
-  const email = document.querySelector("input[name='email']").value;
-  const password = document.querySelector("input[name='password']").value;
+      setTimeout(() => {
+        function type() {
+          if (!introOverlay) return;
+          if (twIndex < fullText.length) {
+            twElement.textContent += fullText.charAt(twIndex);
+            twIndex++;
+            setTimeout(type, 100 + (Math.random() * 60 - 30));
+          } else {
+            setTimeout(() => {
+              if (introCaret) introCaret.classList.add('inactive');
+              introOverlay.style.opacity = "0";
+              setTimeout(() => {
+                introOverlay.remove();
+                document.body.style.overflow = "";
+              }, 1200);
+            }, 1200);
+          }
+        }
+        type();
+      }, 1000);
+    });
+  </script>
 
-  if (!email || !password) {
-    alert("Enter email and password first.");
-    return;
-  }
+  <script type="module">
+    import { auth } from "./firebase.js";
+    import {
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      GoogleAuthProvider,
+      signInWithPopup,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-    alert("Account created successfully! You can now login.");
-  } catch (err) {
-    alert(err.message);
-  }
-});
+    /* Redirect if already logged in */
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.replace("dashboard.html");
+      }
+    });
 
-document.getElementById("appleLogin").addEventListener("click", () => {
-  alert("Apple login coming soon 🚀");
-});
-</script>
+    /* EMAIL LOGIN */
+    document.getElementById("emailLogin").addEventListener("click", async () => {
+      const email = document.querySelector("input[name='email']").value;
+      const password = document.querySelector("input[name='password']").value;
+
+      if (!email || !password) {
+        alert("Please enter email and password");
+        return;
+      }
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.replace("dashboard.html");
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    /* GOOGLE LOGIN (ONLY CHANGE HERE) */
+    document.getElementById("googleLogin").addEventListener("click", async () => {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      window.location.replace("dashboard.html");
+    });
+
+    /* SIGNUP */
+    document.getElementById("signupLink").addEventListener("click", async () => {
+      const email = document.querySelector("input[name='email']").value;
+      const password = document.querySelector("input[name='password']").value;
+
+      if (!email || !password) {
+        alert("Enter email and password first.");
+        return;
+      }
+
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert("Account created successfully! You can now login.");
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById("appleLogin").addEventListener("click", () => {
+      alert("Apple login coming soon 🚀");
+    });
+  </script>
 
 </body>
+
 </html>

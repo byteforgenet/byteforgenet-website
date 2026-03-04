@@ -5,8 +5,8 @@
     <meta charset="UTF-8" />
     <title>Notes | Byteforgenet</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./style.css" />
-    <script type="module" src="layout.js"></script>
+    <link rel="stylesheet" href="./style.css?v=1772010732774" />
+    <script type="module" src="layout.js?v=3"></script>
     <style>
         .notes-header {
             display: flex;
@@ -209,17 +209,28 @@
     </style>
 </head>
 
-<body class="auth-bg">
+<body>
+
+    <!-- CURSOR GLOW -->
+    <div class="cursor-glow" id="cursorGlow"></div>
+    <script>
+        const cursorGlow = document.getElementById("cursorGlow");
+        document.addEventListener("mousemove", (e) => {
+            requestAnimationFrame(() => {
+                cursorGlow.style.transform = `translate(${e.clientX - 400}px, ${e.clientY - 400}px)`;
+            });
+        });
+    </script>
+
 
     <!-- TOPBAR -->
     <header class="topbar">
         <div class="topbar-left">
-            <h1 class="app-logo">Byteforgenet</h1>
+            <a href="dashboard.html" class="app-logo" style="text-decoration:none; color:inherit;">Byteforgenet</a>
         </div>
         <div class="topbar-right">
             <button id="themeToggle" title="Toggle theme"
-                style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;"
-                onclick="toggleTheme()">🌙</button>
+                style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;">🌙</button>
 
             <div class="notif-wrap" id="notifBtn">
                 <div class="bell"></div>
@@ -301,6 +312,9 @@
             <textarea class="note-edit-body" id="noteBody" placeholder="Write anything…"></textarea>
 
             <div style="display:flex;justify-content:flex-end;gap:10px;">
+                <button class="ghost" id="summarizeBtn" onclick="summarizeNote()"
+                    style="margin-right:auto; color:#a855f7; border-color:rgba(168, 85, 247, 0.3);">✨ AI
+                    Summary</button>
                 <button class="ghost" onclick="closeNoteModal()">Cancel</button>
                 <button class="primary small" onclick="saveNote()">Save Note</button>
             </div>
@@ -373,15 +387,6 @@
             ? notifs.map(n => `<div class="notif-item">${n.text}</div>`).join("")
             : `<div style="color:#777;font-size:13px;padding:6px 0;">No notifications</div>`;
 
-        /* THEME */
-        const savedTheme = localStorage.getItem("bf_theme") || "dark";
-        if (savedTheme === "light") document.documentElement.classList.add("light-mode");
-        document.getElementById("themeToggle").textContent = savedTheme === "light" ? "☀️" : "🌙";
-        window.toggleTheme = function () {
-            const isLight = document.documentElement.classList.toggle("light-mode");
-            localStorage.setItem("bf_theme", isLight ? "light" : "dark");
-            document.getElementById("themeToggle").textContent = isLight ? "☀️" : "🌙";
-        };
 
         /* NOTES DATA */
         const NOTES_KEY = "bf_notes";
@@ -470,6 +475,39 @@
             closeNoteModal();
             renderNotes();
             toast(editingId ? "Note updated!" : "Note saved!", "success");
+        };
+
+        window.summarizeNote = async function () {
+            const bodyInput = document.getElementById("noteBody");
+            const text = bodyInput.value.trim();
+            if (!text) { toast("Write some content to summarize first!", "error"); return; }
+
+            const btn = document.getElementById("summarizeBtn");
+            const originalText = btn.textContent;
+            btn.textContent = "⚙️ Thinking...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch("http://localhost:3000/api/summarize-note", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.summary) {
+                    bodyInput.value += "\n\n--- AI Summary ---\n" + data.summary;
+                    toast("AI Summary added!", "success");
+                } else {
+                    toast(data.error || "Failed to generate summary.", "error");
+                }
+            } catch (err) {
+                console.error("Summarizer error:", err);
+                toast("Network error. Is the AI backend running?", "error");
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
         };
 
         window.deleteNote = function (id) {

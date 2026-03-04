@@ -5,8 +5,8 @@
   <meta charset="UTF-8" />
   <title>Teams | Byteforgenet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="./style.css" />
-  <script type="module" src="layout.js"></script>
+  <link rel="stylesheet" href="./style.css?v=1772010732777" />
+  <script type="module" src="layout.js?v=3"></script>
   <style>
     .modal {
       position: fixed;
@@ -43,17 +43,28 @@
   </style>
 </head>
 
-<body class="auth-bg">
+<body>
+
+  <!-- CURSOR GLOW -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <script>
+    const cursorGlow = document.getElementById("cursorGlow");
+    document.addEventListener("mousemove", (e) => {
+      requestAnimationFrame(() => {
+        cursorGlow.style.transform = `translate(${e.clientX - 400}px, ${e.clientY - 400}px)`;
+      });
+    });
+  </script>
+
 
   <!-- TOPBAR -->
   <header class="topbar">
     <div class="topbar-left">
-      <h1 class="app-logo">Byteforgenet</h1>
+      <a href="dashboard.html" class="app-logo" style="text-decoration:none; color:inherit;">Byteforgenet</a>
     </div>
     <div class="topbar-right">
       <button id="themeToggle" title="Toggle theme"
-        style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;"
-        onclick="toggleTheme()">🌙</button>
+        style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;">🌙</button>
 
       <div class="notif-wrap" id="notifBtn">
         <div class="bell"></div>
@@ -154,6 +165,25 @@
     </div>
   </div>
 
+  <!-- MEMBER DETAILS MODAL -->
+  <div class="modal hidden" id="memberModal">
+    <div class="modal-card" style="text-align: center;" onclick="event.stopPropagation()">
+      <div id="memberModalAvatar" style="margin: 0 auto 16px;"></div>
+      <h3 id="memberModalName" style="margin-bottom: 4px;"></h3>
+      <p id="memberModalEmail" style="color: #aaa; font-size: 14px; margin-top: 0; margin-bottom: 12px;"></p>
+      <div style="margin-bottom: 24px;">
+        <span id="memberModalRole"
+          style="font-size:11px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); margin-right: 8px;"></span>
+        <span id="memberModalStatus"
+          style="font-size:11px; padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2);"></span>
+      </div>
+      <div style="display:flex;justify-content:center;gap:10px;">
+        <button class="ghost" onclick="closeMemberModal()">Close</button>
+        <button id="memberModalRemoveBtn" class="team-remove">Remove Member</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { auth } from "./firebase.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
@@ -204,15 +234,6 @@
       ? notifs.map(n => `<div class="notif-item">${n.text}</div>`).join("")
       : `<div style="color:#777;font-size:13px;padding:6px 0;">No notifications</div>`;
 
-    /* THEME */
-    const savedTheme = localStorage.getItem("bf_theme") || "dark";
-    if (savedTheme === "light") document.documentElement.classList.add("light-mode");
-    document.getElementById("themeToggle").textContent = savedTheme === "light" ? "☀️" : "🌙";
-    window.toggleTheme = function () {
-      const isLight = document.documentElement.classList.toggle("light-mode");
-      localStorage.setItem("bf_theme", isLight ? "light" : "dark");
-      document.getElementById("themeToggle").textContent = isLight ? "☀️" : "🌙";
-    };
 
     /* TEAM DATA */
     const TEAM_KEY = "bf_team";
@@ -240,17 +261,32 @@
       members.forEach((m, i) => {
         const card = document.createElement("div");
         card.className = "team-card";
+        card.setAttribute("onclick", `openMemberModal(${m.id})`);
 
         const av = m.photo
           ? `<img src="${m.photo}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;" />`
           : `<div class="team-avatar" style="background:linear-gradient(${avatarGradients[i % avatarGradients.length]});">${m.name.charAt(0).toUpperCase()}</div>`;
 
+        let statusText = m.role.toUpperCase();
+        let statusColor = roleColors[m.role] || '#aaa';
+
+        if (m.status === 'pending') {
+          statusText = 'PENDING';
+          statusColor = '#f59e0b'; // Amber
+        } else if (m.status === 'rejected') {
+          statusText = 'REJECTED';
+          statusColor = '#ef4444'; // Red
+        } else if (m.status === 'accepted') {
+          statusText = 'ACCEPTED';
+          statusColor = '#10b981'; // Emerald Green
+        }
+
         card.innerHTML = `
       ${av}
       <p class="team-name">${m.name}</p>
-      <span style="font-size:11px;color:${roleColors[m.role] || '#aaa'};">${m.role.toUpperCase()}</span>
+      <span style="font-size:11px;color:${statusColor};">${statusText}</span>
       ${m.email ? `<span class="team-role">${m.email}</span>` : ""}
-      ${m.role !== "Owner" ? `<button class="team-remove" onclick="removeMember(${m.id})">Remove</button>` : ""}
+      ${m.status === 'pending' ? `<button class="team-remove" onclick="removeMember(${m.id}); event.stopPropagation();" style="margin-top:8px;">Remove</button>` : ""}
     `;
         grid.appendChild(card);
       });
@@ -265,30 +301,128 @@
       if (m) toast(`${m.name} removed from team.`, "info");
     };
 
+    /* MEMBER MODAL */
+    window.openMemberModal = function (id) {
+      const members = JSON.parse(localStorage.getItem(TEAM_KEY) || "[]");
+      const m = members.find(x => x.id === id);
+      if (!m) return;
+
+      const avContainer = document.getElementById("memberModalAvatar");
+      if (m.photo) {
+        avContainer.innerHTML = `<img src="${m.photo}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;" />`;
+      } else {
+        const i = members.indexOf(m);
+        avContainer.innerHTML = `<div class="team-avatar" style="width:72px;height:72px;font-size:28px;margin:auto;background:linear-gradient(${avatarGradients[i % avatarGradients.length]});">${m.name.charAt(0).toUpperCase()}</div>`;
+      }
+
+      document.getElementById("memberModalName").textContent = m.name;
+      document.getElementById("memberModalEmail").textContent = m.email || "No email provided";
+
+      const roleSpan = document.getElementById("memberModalRole");
+      roleSpan.textContent = m.role.toUpperCase();
+      roleSpan.style.color = roleColors[m.role] || '#aaa';
+
+      const statusSpan = document.getElementById("memberModalStatus");
+      if (m.status === 'pending') {
+        statusSpan.textContent = 'PENDING';
+        statusSpan.style.color = '#f59e0b';
+      } else if (m.status === 'rejected') {
+        statusSpan.textContent = 'REJECTED';
+        statusSpan.style.color = '#ef4444';
+      } else if (m.status === 'accepted') {
+        statusSpan.textContent = 'ACCEPTED';
+        statusSpan.style.color = '#10b981';
+      } else {
+        statusSpan.textContent = 'ACTIVE';
+        statusSpan.style.color = '#10b981';
+      }
+
+      const removeBtn = document.getElementById("memberModalRemoveBtn");
+      if (m.role !== "Owner") {
+        removeBtn.style.display = "inline-block";
+        removeBtn.onclick = function () {
+          removeMember(m.id);
+          closeMemberModal();
+        };
+      } else {
+        removeBtn.style.display = "none";
+      }
+
+      document.getElementById("memberModal").classList.remove("hidden");
+    };
+
+    window.closeMemberModal = () => document.getElementById("memberModal").classList.add("hidden");
+    document.getElementById("memberModal").onclick = closeMemberModal;
+
     /* INVITE MODAL */
     window.openInviteModal = () => document.getElementById("inviteModal").classList.remove("hidden");
     window.closeInviteModal = () => document.getElementById("inviteModal").classList.add("hidden");
     document.getElementById("inviteModal").onclick = closeInviteModal;
 
-    window.inviteMember = function () {
+    window.inviteMember = async function () {
       const name = document.getElementById("inviteName").value.trim();
       const email = document.getElementById("inviteEmail").value.trim();
       const role = document.getElementById("inviteRole").value;
-      if (!name) { toast("Enter member name!", "error"); return; }
+      if (!name || !email) { toast("Enter member name and email!", "error"); return; }
 
-      const members = JSON.parse(localStorage.getItem(TEAM_KEY) || "[]");
-      members.push({ id: Date.now(), name, email, role, photo: "" });
-      localStorage.setItem(TEAM_KEY, JSON.stringify(members));
+      const inviterName = document.getElementById("topbarName").textContent || "User";
 
-      const activities = JSON.parse(localStorage.getItem("bf_activity") || "[]");
-      activities.unshift(`Invited ${name} as ${role}`);
-      localStorage.setItem("bf_activity", JSON.stringify(activities.slice(0, 20)));
+      // Get the real inviter email from the local seed
+      const currentTeam = JSON.parse(localStorage.getItem(TEAM_KEY) || "[]");
+      const owner = currentTeam.find(m => m.role === "Owner");
+      const inviterEmail = owner ? owner.email : "user@byteforgenet.com";
 
-      document.getElementById("inviteName").value = "";
-      document.getElementById("inviteEmail").value = "";
-      closeInviteModal();
-      renderTeam();
-      toast(`${name} invited as ${role}!`, "success");
+      const btn = document.querySelector("#inviteModal .primary");
+      const oldText = btn.textContent;
+      btn.textContent = "Sending...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("http://localhost:3000/api/invite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            inviteeName: name,
+            inviteeEmail: email,
+            role: role,
+            inviterName: inviterName,
+            inviterEmail: inviterEmail,
+            clientUrl: window.location.href.substring(0, window.location.href.lastIndexOf('/'))
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          console.log("Ethereal testing preview URL: ", data.previewUrl);
+
+          // Add them locally as pending
+          const members = JSON.parse(localStorage.getItem(TEAM_KEY) || "[]");
+          members.push({ id: Date.now(), name, email, role, photo: "", status: "pending" });
+          localStorage.setItem(TEAM_KEY, JSON.stringify(members));
+
+          const activities = JSON.parse(localStorage.getItem("bf_activity") || "[]");
+          activities.unshift(`Sent email invite to ${name} as ${role}`);
+          localStorage.setItem("bf_activity", JSON.stringify(activities.slice(0, 20)));
+
+          document.getElementById("inviteName").value = "";
+          document.getElementById("inviteEmail").value = "";
+          closeInviteModal();
+          renderTeam();
+
+          // Open Ethereal preview natively for testing purposes immediately
+          window.open(data.previewUrl, "_blank");
+          toast(`Invite emailed to ${name}!`, "success");
+        } else {
+          toast(data.error || "Failed to send email invite", "error");
+        }
+      } catch (err) {
+        toast("Server error. Is the backend running?", "error");
+        console.error(err);
+      } finally {
+        btn.textContent = oldText;
+        btn.disabled = false;
+      }
     };
   </script>
 

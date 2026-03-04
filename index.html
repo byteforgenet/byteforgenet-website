@@ -1,16 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Byteforgenet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./style.css?v=1772010732774" />
 </head>
+
 <body class="auth-bg">
+
+  <!-- CURSOR GLOW -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <script>
+    const cursorGlow = document.getElementById("cursorGlow");
+    document.addEventListener("mousemove", (e) => {
+      requestAnimationFrame(() => {
+        cursorGlow.style.transform = `translate(${e.clientX - 400}px, ${e.clientY - 400}px)`;
+      });
+    });
+  </script>
+
   <div class="box">
-    <h1>Byteforgenet</h1>
+    <a href="dashboard.html" style="text-decoration:none; color:inherit;">
+      <h1>Byteforgenet</h1>
+    </a>
     <p>Build. Track. Showcase.</p>
     <button onclick="location.href='login.html'">Get Started</button>
   </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const introHTML = `
+        <div id="globalIntroOverlay">
+          <div class="intro-container">
+            <div class="logo-sphere">
+              <div class="ring ring-1"></div>
+              <div class="ring ring-2"></div>
+              <div class="ring ring-3"></div>
+              <div class="core"></div>
+            </div>
+            <div class="intro-text-box">
+              <div><span id="introTypewriter" class="intro-typewriter-text"></span><span class="intro-caret" id="introCaret"></span></div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML("afterbegin", introHTML);
+
+      const introOverlay = document.getElementById("globalIntroOverlay");
+      const twElement = document.getElementById("introTypewriter");
+      const introCaret = document.getElementById("introCaret");
+
+      document.body.style.overflow = "hidden";
+
+      const fullText = "byteforgenet";
+      let twIndex = 0;
+
+      setTimeout(() => {
+        function type() {
+          if (!introOverlay) return;
+          if (twIndex < fullText.length) {
+            twElement.textContent += fullText.charAt(twIndex);
+            twIndex++;
+            setTimeout(type, 100 + (Math.random() * 60 - 30));
+          } else {
+            setTimeout(() => {
+              if (introCaret) introCaret.classList.add('inactive');
+              introOverlay.style.opacity = "0";
+              setTimeout(() => {
+                introOverlay.remove();
+                document.body.style.overflow = "";
+              }, 1200);
+            }, 1200);
+          }
+        }
+        type();
+      }, 1000);
+    });
+  </script>
 </body>
+
 </html>

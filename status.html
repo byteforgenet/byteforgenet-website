@@ -7,11 +7,23 @@
 <meta charset="UTF-8" />
 <title>System Status | Byteforgenet</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="./style.css" />
-<script src="layout.js"></script>
+<link rel="stylesheet" href="./style.css?v=1772010732776" />
+<script type="module" src="layout.js"></script>
 </head>
 
-<body class="auth-bg">
+<body>
+
+  <!-- CURSOR GLOW -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <script>
+    const cursorGlow = document.getElementById("cursorGlow");
+    document.addEventListener("mousemove", (e) => {
+      requestAnimationFrame(() => {
+        cursorGlow.style.transform = `translate(${e.clientX - 400}px, ${e.clientY - 400}px)`;
+      });
+    });
+  </script>
+
 <div class="app-layout">
 <aside class="sidebar">
 <nav>

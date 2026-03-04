@@ -10,5 +10,9 @@
   },
   "devDependencies": {
     "vite": "^7.2.4"
+  },
+  "dependencies": {
+    "@types/fabric": "^5.3.11",
+    "fabric": "^7.2.0"
   }
 }

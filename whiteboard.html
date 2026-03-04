@@ -3,54 +3,20 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>Dashboard | Byteforgenet</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="./style.css?v=1772010732773" />
-  <script type="module" src="layout.js?v=3"></script>
+  <title>Whiteboard - Byteforgenet</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Socket.io and Fabric.js for Real-time Whiteboard -->
+  <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <script src="shared.js"></script>
+  <script src="layout.js"></script>
+  <script src="chatbot.js"></script>
+  <script src="whiteboard.js"></script>
+
+  <!-- Notification Popup -->
   <style>
-    .greeting-section {
-      margin-bottom: 36px;
-    }
-
-    .greeting-section h2 {
-      font-size: 28px;
-      margin: 0 0 4px;
-    }
-
-    .greeting-section p {
-      color: #888;
-      margin: 0;
-      font-size: 14px;
-    }
-
-    .greeting-row {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .quick-actions {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 36px;
-      flex-wrap: wrap;
-    }
-
-    .search-bar {
-      padding: 10px 16px;
-      border-radius: 10px;
-      background: rgba(20, 20, 26, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: white;
-      width: 260px;
-    }
-
-    .search-bar:focus {
-      outline: none;
-      border-color: #4f8cff;
-    }
-
+    /* Styles from original dashboard.html that might still be relevant or were explicitly kept in the diff */
     .modal {
       position: fixed;
       inset: 0;
@@ -79,34 +45,6 @@
       margin: 0 0 18px;
       font-size: 18px;
     }
-
-    /* note preview mini */
-    .note-preview {
-      padding: 12px 14px;
-      border-radius: 12px;
-      border-left: 3px solid #4f8cff;
-      background: rgba(79, 140, 255, 0.06);
-      margin-bottom: 10px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .note-preview:hover {
-      background: rgba(79, 140, 255, 0.12);
-    }
-
-    .note-preview strong {
-      font-size: 13px;
-      display: block;
-      margin-bottom: 3px;
-    }
-
-    .note-preview span {
-      font-size: 12px;
-      color: #888;
-    }
-
-
 
     .toast-container {
       position: fixed;
@@ -155,6 +93,82 @@
       border-color: rgba(79, 140, 255, 0.4);
       color: #93c5fd;
     }
+
+    /* Whiteboard specific styles */
+    .whiteboard-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      background: #1a1a2a;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      padding: 10px 20px;
+      background: #222;
+      border-bottom: 1px solid #333;
+      flex-wrap: wrap;
+    }
+
+    .toolbar button,
+    .toolbar input[type="color"] {
+      background: #333;
+      border: 1px solid #444;
+      color: #eee;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      font-size: 14px;
+    }
+
+    .toolbar button:hover,
+    .toolbar input[type="color"]:hover {
+      background: #444;
+      border-color: #555;
+    }
+
+    .toolbar button.active {
+      background: #4f8cff;
+      border-color: #4f8cff;
+      color: white;
+    }
+
+    .toolbar input[type="color"] {
+      width: 40px;
+      height: 36px;
+      padding: 0;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .toolbar input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .toolbar input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 6px;
+    }
+
+    .canvas-wrapper {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    canvas {
+      border: 1px solid #444;
+      background: #fff;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    }
   </style>
 </head>
 
@@ -183,24 +197,17 @@
       </div>
     </div>
     <div class="topbar-right">
-      <button id="themeToggle" title="Toggle theme"
-        style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;">🌙</button>
-
-      <div class="notif-wrap" id="notifBtn">
-        <div class="bell"></div>
-        <span class="notif-count" id="notifCount">0</span>
-        <div class="notif-menu hidden" id="notifMenu">
-          <h4>Notifications</h4>
-          <div id="notifList"></div>
+      <div class="header-user">
+        <div class="notification-bell">
+          <i class="fas fa-bell"></i>
         </div>
-      </div>
-
-      <div class="profile" id="profileBtn">
-        <div class="user-text">
-          <span class="username" id="topbarName">—</span>
-          <span class="role-badge" id="roleBadge"></span>
+        <div class="user-profile-btn" onclick="document.getElementById('userDropdown').classList.toggle('show')">
+          <div class="user-avatar" id="headerAvatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <span class="user-name" id="headerUserName">Loading...</span>
+          <i class="fas fa-chevron-down"></i>
         </div>
-        <div class="avatar" id="topbarAvatar"><span class="online-dot"></span></div>
         <div class="profile-menu hidden" id="profileMenu">
           <div class="menu-section">
             <button class="menu-item" onclick="location.href='profile.html'">Profile</button>
@@ -219,8 +226,10 @@
   <div class="app-layout">
     <aside class="sidebar">
       <nav>
-        <a href="dashboard.html" class="nav-item active">Dashboard</a>
-        <a href="project.html" class="nav-item">Projects</a>
+        <a href="dashboard.html"><i class="fas fa-home"></i> <span>Dashboard</span></a>
+        <!-- Add Whiteboard to sidebar -->
+        <a href="whiteboard.html" class="active"><i class="fas fa-chalkboard"></i> <span>Whiteboard</span></a>
+        <a href="project.html"><i class="fas fa-project-diagram"></i> <span>Projects</span></a>
         <a href="notes.html" class="nav-item">Notes</a>
         <a href="teams.html" class="nav-item">Teams</a>
         <a href="profile.html" class="nav-item">Profile</a>

@@ -5,8 +5,8 @@
   <meta charset="UTF-8" />
   <title>Projects | Byteforgenet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="./style.css" />
-  <script type="module" src="layout.js"></script>
+  <link rel="stylesheet" href="./style.css?v=1772010732776" />
+  <script type="module" src="layout.js?v=3"></script>
   <style>
     /* ========== KANBAN BOARD ========== */
     .kanban-board {
@@ -128,7 +128,8 @@
       line-height: 1.4;
     }
 
-    .kanban-delete {
+    .kanban-delete,
+    .kanban-edit {
       background: none;
       border: none;
       color: #444;
@@ -143,6 +144,11 @@
     .kanban-delete:hover {
       background: rgba(248, 113, 113, 0.15);
       color: #f87171;
+    }
+
+    .kanban-edit:hover {
+      background: rgba(96, 165, 250, 0.15);
+      color: #93c5fd;
     }
 
     .prio-tag {
@@ -242,6 +248,144 @@
       background: rgba(79, 140, 255, 0.1);
     }
 
+    /* ========== TIMELINE / GANTT VIEW ========== */
+    .view-toggle {
+      display: flex;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 4px;
+      width: fit-content;
+    }
+
+    .view-toggle button {
+      background: transparent;
+      border: none;
+      color: #aaa;
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .view-toggle button.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .timeline-container {
+      display: none;
+      /* Hidden by default */
+      background: rgba(14, 14, 20, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      margin-top: 24px;
+      overflow-x: auto;
+      padding: 20px;
+      position: relative;
+    }
+
+    .timeline-grid {
+      display: grid;
+      grid-template-columns: 200px repeat(30, 40px);
+      /* 30 days */
+      gap: 1px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+
+    .timeline-header-cell {
+      background: rgba(20, 20, 26, 0.9);
+      padding: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .timeline-header-cell:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      z-index: 10;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .timeline-row {
+      display: contents;
+    }
+
+    .timeline-cell {
+      background: rgba(14, 14, 20, 0.9);
+      height: 50px;
+      position: relative;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .timeline-cell.task-name {
+      padding: 10px;
+      font-size: 13px;
+      color: #ddd;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      background: rgba(20, 20, 26, 0.95);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+    }
+
+    .timeline-bar {
+      position: absolute;
+      top: 10px;
+      height: 30px;
+      background: var(--primary-color);
+      border-radius: 6px;
+      z-index: 2;
+      box-shadow: 0 4px 12px rgba(79, 140, 255, 0.2);
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 11px;
+      color: white;
+      white-space: nowrap;
+      overflow: hidden;
+      cursor: grab;
+      transition: filter 0.2s;
+    }
+
+    .timeline-bar:hover {
+      filter: brightness(1.2);
+    }
+
+    .timeline-bar.dependent {
+      background: #fbbf24;
+    }
+
+    /* Dependency lines */
+    .dependency-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .dep-line {
+      stroke: #f43f5e;
+      stroke-width: 2;
+      fill: none;
+      stroke-dasharray: 4;
+    }
+
     @media (max-width: 900px) {
       .kanban-board {
         grid-template-columns: 1fr;
@@ -250,18 +394,29 @@
   </style>
 </head>
 
-<body class="auth-bg">
+<body>
+
+  <!-- CURSOR GLOW -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <script>
+    const cursorGlow = document.getElementById("cursorGlow");
+    document.addEventListener("mousemove", (e) => {
+      requestAnimationFrame(() => {
+        cursorGlow.style.transform = `translate(${e.clientX - 400}px, ${e.clientY - 400}px)`;
+      });
+    });
+  </script>
+
 
   <!-- TOPBAR -->
   <header class="topbar">
     <div class="topbar-left">
-      <h1 class="app-logo">Byteforgenet</h1>
+      <a href="dashboard.html" class="app-logo" style="text-decoration:none; color:inherit;">Byteforgenet</a>
     </div>
     <div class="topbar-right">
       <!-- Theme toggle -->
       <button id="themeToggle" title="Toggle theme"
-        style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;"
-        onclick="toggleTheme()">🌙</button>
+        style="background:none;border:none;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:8px;">🌙</button>
 
       <div class="notif-wrap" id="notifBtn">
         <div class="bell"></div>
@@ -321,7 +476,7 @@
       </div>
 
       <!-- Project stats -->
-      <div style="display:flex;gap:16px;margin-bottom:28px;flex-wrap:wrap;">
+      <div style="display:flex;gap:16px;margin-bottom:28px;flex-wrap:wrap;align-items:center;">
         <div class="stat-card" style="flex:1;min-width:120px;">
           <h3>Status</h3><strong style="color:#86efac;">Active</strong>
         </div>
@@ -333,6 +488,12 @@
         </div>
         <div class="stat-card" style="flex:1;min-width:120px;">
           <h3>Done</h3><strong id="doneCount">0</strong>
+        </div>
+
+        <!-- VIEW TOGGLE -->
+        <div class="view-toggle">
+          <button id="btnKanban" class="active" onclick="switchView('kanban')">Kanban</button>
+          <button id="btnTimeline" onclick="switchView('timeline')">Timeline</button>
         </div>
       </div>
 
@@ -358,7 +519,6 @@
             <span class="col-count" id="count-inprog">0</span>
           </div>
           <div class="kanban-cards" id="cards-inprog"></div>
-          <button class="kanban-add-btn" onclick="openAddModal('inprog')">+ Add task</button>
         </div>
 
         <!-- DONE -->
@@ -369,9 +529,16 @@
             <span class="col-count" id="count-done">0</span>
           </div>
           <div class="kanban-cards" id="cards-done"></div>
-          <button class="kanban-add-btn" onclick="openAddModal('done')">+ Add task</button>
         </div>
 
+      </div>
+
+      <!-- TIMELINE BOARD -->
+      <div class="timeline-container" id="timelineBoard">
+        <svg class="dependency-svg" id="dependencySvg"></svg>
+        <div class="timeline-grid" id="timelineGrid">
+          <!-- Will be populated by JS -->
+        </div>
       </div>
 
     </main>
@@ -382,10 +549,18 @@
     <div class="modal-card" onclick="event.stopPropagation()">
       <h3>New Task</h3>
       <input id="taskInput" placeholder="Task name…" style="margin-bottom:14px;" />
+      <input id="taskDescInput" placeholder="Description (optional)…" style="margin-bottom:14px;" />
+      <input id="taskAssigneeInput" placeholder="Assignee Email (optional)…" style="margin-bottom:14px;" />
+
+      <label
+        style="font-size:12px;color:#9aa3b2;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;">Deadline
+        (Optional)</label>
+      <input type="date" id="taskDeadlineInput"
+        style="margin-bottom:14px; width:100%; box-sizing:border-box; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#fff; font-family:inherit; font-size:14px;" />
 
       <label
         style="font-size:12px;color:#9aa3b2;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;">Priority</label>
-      <div class="prio-btn-row">
+      <div class="prio-btn-row" id="addPrioRow">
         <button class="prio-btn" data-prio="Low">Low</button>
         <button class="prio-btn active" data-prio="Med">Med</button>
         <button class="prio-btn" data-prio="High">High</button>
@@ -394,6 +569,35 @@
       <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px;">
         <button class="ghost" onclick="closeModal()">Cancel</button>
         <button class="primary small" onclick="addTask()">Add Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT TASK MODAL -->
+  <div class="modal hidden" id="editTaskModal">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h3>Edit Task</h3>
+      <input id="editTaskInput" placeholder="Task name…" style="margin-bottom:14px;" />
+      <input id="editTaskDescInput" placeholder="Description (optional)…" style="margin-bottom:14px;" />
+      <input id="editTaskAssigneeInput" placeholder="Assignee Email (optional)…" style="margin-bottom:14px;" />
+
+      <label
+        style="font-size:12px;color:#9aa3b2;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;">Deadline
+        (Optional)</label>
+      <input type="date" id="editTaskDeadlineInput"
+        style="margin-bottom:14px; width:100%; box-sizing:border-box; padding:10px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#fff; font-family:inherit; font-size:14px;" />
+
+      <label
+        style="font-size:12px;color:#9aa3b2;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;">Priority</label>
+      <div class="prio-btn-row" id="editPrioRow">
+        <button class="prio-btn" data-prio="Low">Low</button>
+        <button class="prio-btn" data-prio="Med">Med</button>
+        <button class="prio-btn" data-prio="High">High</button>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px;">
+        <button class="ghost" onclick="closeModal()">Cancel</button>
+        <button class="primary small" onclick="saveEditTask()">Save Changes</button>
       </div>
     </div>
   </div>
@@ -459,15 +663,6 @@
     const myPerm = JSON.parse(localStorage.getItem(PERM_KEY))["bf_web"]?.role || "viewer";
     document.getElementById("permBadge").textContent = myPerm.toUpperCase();
 
-    /* ===== THEME ===== */
-    const savedTheme = localStorage.getItem("bf_theme") || "dark";
-    if (savedTheme === "light") document.documentElement.classList.add("light-mode");
-    document.getElementById("themeToggle").textContent = savedTheme === "light" ? "☀️" : "🌙";
-    window.toggleTheme = function () {
-      const isLight = document.documentElement.classList.toggle("light-mode");
-      localStorage.setItem("bf_theme", isLight ? "light" : "dark");
-      document.getElementById("themeToggle").textContent = isLight ? "☀️" : "🌙";
-    };
 
     /* ===== KANBAN DATA ===== */
     const BOARD_KEY = "bf_kanban";
@@ -502,9 +697,17 @@
           card.innerHTML = `
         <div class="kanban-card-top">
           <span class="kanban-card-text">${task.text}</span>
-          <button class="kanban-delete" onclick="deleteTask(${task.id},'${col}');event.stopPropagation();" title="Delete">✕</button>
+          <div style="display:flex; gap:4px; align-items:center;">
+            <button class="kanban-edit" onclick="openEditModal(${task.id},'${col}');event.stopPropagation();" title="Edit">✎</button>
+            <button class="kanban-delete" onclick="deleteTask(${task.id},'${col}');event.stopPropagation();" title="Delete">✕</button>
+          </div>
         </div>
-        ${task.priority ? `<span class="prio-tag prio-${task.priority}">${task.priority}</span>` : ""}
+        ${task.description ? `<p style="font-size:12px;color:#aaa;margin:6px 0 8px;">${task.description}</p>` : ""}
+        ${task.deadline ? `<div style="font-size:11px;color:#eab308;margin:0 0 8px;display:flex;align-items:center;gap:4px;">⏱ ${task.deadline}</div>` : ""}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+          ${task.priority ? `<span class="prio-tag prio-${task.priority}">${task.priority}</span>` : "<span></span>"}
+          ${task.assigneeEmail ? `<span style="font-size:11px;color:#fff;background:rgba(79, 140, 255, 0.2);padding:2px 6px;border-radius:4px;border:1px solid rgba(79,140,255,0.4);">👤 ${task.text.match(/\(Assigned to: ([^)]+)\)/)?.[1] || task.assigneeEmail.split('@')[0]}</span>` : ""}
+        </div>
       `;
 
           card.addEventListener("dragstart", onDragStart);
@@ -516,6 +719,131 @@
       const doneCnt = (board.done || []).length;
       document.getElementById("doneCount").textContent = doneCnt;
       document.getElementById("taskCountBadge").textContent = `${total} task${total !== 1 ? "s" : ""}`;
+    }
+
+    /* ===== VIEW TOGGLE & TIMELINE RENDERER ===== */
+    let currentView = 'kanban';
+
+    window.switchView = function (view) {
+      currentView = view;
+      document.getElementById('btnKanban').classList.toggle('active', view === 'kanban');
+      document.getElementById('btnTimeline').classList.toggle('active', view === 'timeline');
+
+      const kanbanBoard = document.querySelector('.kanban-board');
+      const timelineBoard = document.getElementById('timelineBoard');
+
+      if (view === 'kanban') {
+        kanbanBoard.style.display = 'grid';
+        timelineBoard.style.display = 'none';
+      } else {
+        kanbanBoard.style.display = 'none';
+        timelineBoard.style.display = 'block';
+        renderTimeline();
+      }
+    };
+
+    function renderTimeline() {
+      const board = loadBoard();
+      const allTasks = [...board.todo, ...board.inprog, ...board.done];
+      const grid = document.getElementById('timelineGrid');
+
+      // Let's create a 30 day window starting from 5 days ago
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 5);
+      startDate.setHours(0, 0, 0, 0);
+
+      let html = `
+            <div class="timeline-header-cell">Task Name</div>
+        `;
+
+      // Generate Date Headers
+      for (let i = 0; i < 30; i++) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
+        html += `<div class="timeline-header-cell">${d.getDate()}/${d.getMonth() + 1}</div>`;
+      }
+
+      grid.innerHTML = html;
+
+      // Render Tasks
+      allTasks.forEach((task, index) => {
+        const row = document.createElement('div');
+        row.className = 'timeline-row';
+
+        // Name cell
+        let rowHtml = `<div class="timeline-cell task-name" title="${task.text}">${task.text}</div>`;
+
+        // Calculate pixel positions for the bar
+        let taskStart = new Date();
+        let taskEnd = new Date();
+        let durationDays = 3; // Default 3 days if no deadline
+
+        if (task.deadline) {
+          taskEnd = new Date(task.deadline);
+          // Estimate a start date (e.g. 3 days before deadline)
+          taskStart = new Date(taskEnd);
+          taskStart.setDate(taskStart.getDate() - durationDays);
+        }
+
+        // Generate grid cells
+        for (let i = 0; i < 30; i++) {
+          const cellDate = new Date(startDate);
+          cellDate.setDate(cellDate.getDate() + i);
+
+          let isStartDay = (cellDate.getDate() === taskStart.getDate() && cellDate.getMonth() === taskStart.getMonth());
+
+          rowHtml += `<div class="timeline-cell">`;
+
+          // Draw the bar on the starting day cell
+          if (isStartDay) {
+            const width = durationDays * 40; // 40px per day column
+            const startOffset = 0;
+            rowHtml += `<div class="timeline-bar ${task.priority === 'High' ? 'dependent' : ''}" style="width: ${width}px; left: ${startOffset}px">${task.text}</div>`;
+          }
+
+          rowHtml += `</div>`;
+        }
+
+        row.innerHTML = rowHtml;
+        grid.appendChild(row);
+      });
+
+      // Draw Dependency Lines (mocking dependencies for high prio tasks)
+      drawDependencies(allTasks);
+    }
+
+    function drawDependencies(tasks) {
+      const svg = document.getElementById('dependencySvg');
+      svg.innerHTML = '';
+
+      // A simple visual flourish: connect Med tasks to High priority tasks
+      const highTasks = Array.from(document.querySelectorAll('.timeline-bar.dependent'));
+      const medTasks = Array.from(document.querySelectorAll('.timeline-bar:not(.dependent)'));
+
+      if (highTasks.length > 0 && medTasks.length > 0) {
+        // Draw a line connecting the first med task to the first high task
+        const startEl = medTasks[0];
+        const endEl = highTasks[0];
+
+        const startRect = startEl.getBoundingClientRect();
+        const endRect = endEl.getBoundingClientRect();
+        const containerRect = svg.getBoundingClientRect();
+
+        // Calculate relative coordinates
+        const startX = (startRect.left - containerRect.left) + startRect.width;
+        const startY = (startRect.top - containerRect.top) + (startRect.height / 2);
+
+        const endX = (endRect.left - containerRect.left);
+        const endY = (endRect.top - containerRect.top) + (endRect.height / 2);
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        // Create a curved spline
+        const d = `M ${startX} ${startY} C ${startX + 30} ${startY}, ${endX - 30} ${endY}, ${endX} ${endY}`;
+        path.setAttribute('d', d);
+        path.setAttribute('class', 'dep-line');
+
+        svg.appendChild(path);
+      }
     }
 
     /* ===== DRAG & DROP ===== */
@@ -573,28 +901,84 @@
     };
     window.closeModal = function () {
       document.getElementById("taskModal").classList.add("hidden");
+      document.getElementById("editTaskModal").classList.add("hidden");
       document.getElementById("shortcutModal").classList.add("hidden");
     };
     document.getElementById("taskModal").onclick = closeModal;
+    document.getElementById("editTaskModal").onclick = closeModal;
 
-    // Priority buttons
-    document.querySelectorAll(".prio-btn").forEach(btn => {
+    // Priority buttons for ADD modal
+    document.querySelectorAll("#addPrioRow .prio-btn").forEach(btn => {
       btn.addEventListener("click", e => {
         e.stopPropagation();
         selectedPrio = btn.dataset.prio;
-        document.querySelectorAll(".prio-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll("#addPrioRow .prio-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
       });
     });
 
+    // Priority buttons for EDIT modal
+    let editSelectedPrio = "Med";
+    document.querySelectorAll("#editPrioRow .prio-btn").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        editSelectedPrio = btn.dataset.prio;
+        document.querySelectorAll("#editPrioRow .prio-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    async function notifyTaskAssignment(taskData) {
+      if (!taskData.assigneeEmail) return;
+      try {
+        const topbarName = document.getElementById("topbarName").textContent;
+        const res = await fetch("http://localhost:3000/api/task-assign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            taskTitle: taskData.text,
+            taskDescription: taskData.description,
+            deadline: taskData.deadline,
+            assigneeEmail: taskData.assigneeEmail,
+            assignerName: topbarName !== "—" ? topbarName : "A Team Member"
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          toast(`Assignment email sent to ${taskData.assigneeEmail}!`, "success");
+        } else {
+          toast(`Failed to send email: ${data.error || 'Server error'}`, "error");
+        }
+      } catch (e) {
+        console.error("Failed to notify assignee", e);
+        toast("Network error: Could not reach email server.", "error");
+      }
+    }
+
     window.addTask = function () {
       const text = document.getElementById("taskInput").value.trim();
+      const description = document.getElementById("taskDescInput").value.trim();
+      const assigneeEmail = document.getElementById("taskAssigneeInput").value.trim();
+      const deadline = document.getElementById("taskDeadlineInput").value;
       if (!text) { toast("Enter a task name!", "error"); return; }
 
+      let finalPrio = selectedPrio;
+      if (deadline) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const target = new Date(deadline + "T00:00:00");
+        const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 7) finalPrio = "High";
+        else if (diffDays <= 14) finalPrio = "Med";
+        else finalPrio = "Low";
+      }
+
       const board = loadBoard();
-      const task = { id: Date.now(), text, priority: selectedPrio };
+      const task = { id: Date.now(), text, description, assigneeEmail, deadline, priority: finalPrio };
       board[currentCol].push(task);
       saveBoard(board);
+
+      notifyTaskAssignment(task);
 
       const activities = JSON.parse(localStorage.getItem("bf_activity") || "[]");
       activities.unshift(`Added task "${text}"`);
@@ -612,6 +996,81 @@
       saveBoard(board);
       renderBoard();
       if (task) toast(`"${task.text}" deleted.`, "info");
+    };
+
+    let editingTaskId = null;
+    let editingTaskCol = null;
+
+    window.openEditModal = function (id, col) {
+      const board = loadBoard();
+      const task = board[col].find(t => t.id === id);
+      if (!task) return;
+
+      editingTaskId = id;
+      editingTaskCol = col;
+
+      document.getElementById("editTaskInput").value = task.text || "";
+      document.getElementById("editTaskDescInput").value = task.description || "";
+      document.getElementById("editTaskAssigneeInput").value = task.assigneeEmail || "";
+      document.getElementById("editTaskDeadlineInput").value = task.deadline || "";
+
+      editSelectedPrio = task.priority || "Med";
+      document.querySelectorAll("#editPrioRow .prio-btn").forEach(b => {
+        if (b.dataset.prio === editSelectedPrio) b.classList.add("active");
+        else b.classList.remove("active");
+      });
+
+      document.getElementById("editTaskModal").classList.remove("hidden");
+      setTimeout(() => document.getElementById("editTaskInput").focus(), 80);
+    };
+
+    window.saveEditTask = function () {
+      const text = document.getElementById("editTaskInput").value.trim();
+      const description = document.getElementById("editTaskDescInput").value.trim();
+      const assigneeEmail = document.getElementById("editTaskAssigneeInput").value.trim();
+      const deadline = document.getElementById("editTaskDeadlineInput").value;
+
+      if (!text) { toast("Task name cannot be empty!", "error"); return; }
+
+      let finalPrio = editSelectedPrio;
+      if (deadline) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const target = new Date(deadline + "T00:00:00");
+        const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 7) finalPrio = "High";
+        else if (diffDays <= 14) finalPrio = "Med";
+        else finalPrio = "Low";
+      }
+
+      const board = loadBoard();
+      const taskIndex = board[editingTaskCol].findIndex(t => t.id === editingTaskId);
+      if (taskIndex !== -1) {
+        const oldAssignee = board[editingTaskCol][taskIndex].assigneeEmail;
+        const updatedTask = {
+          ...board[editingTaskCol][taskIndex],
+          text,
+          description,
+          assigneeEmail,
+          deadline,
+          priority: finalPrio
+        };
+        board[editingTaskCol][taskIndex] = updatedTask;
+        saveBoard(board);
+
+        // Notify if newly assigned or assignee changed
+        if (assigneeEmail && assigneeEmail !== oldAssignee) {
+          notifyTaskAssignment(updatedTask);
+        }
+
+        const activities = JSON.parse(localStorage.getItem("bf_activity") || "[]");
+        activities.unshift(`Edited task "${text}"`);
+        localStorage.setItem("bf_activity", JSON.stringify(activities.slice(0, 20)));
+
+        renderBoard();
+        toast("Task updated!", "success");
+      }
+      closeModal();
     };
 
     /* ===== KEYBOARD SHORTCUTS ===== */
@@ -641,8 +1100,68 @@
       if (e.key === "n" || e.key === "N") openAddModal("todo");
     });
 
+    /* ===== LISTEN FOR AI ACTIONS ===== */
+    window.addEventListener("refreshKanbanBoard", () => {
+      renderBoard();
+    });
+
     /* ===== INIT ===== */
     renderBoard();
+
+    // Check for URL actions (from emails)
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    const taskIdRaw = urlParams.get('taskId');
+
+    if (action && taskIdRaw) {
+      const decodedTaskName = decodeURIComponent(taskIdRaw);
+      const board = loadBoard();
+      const activities = JSON.parse(localStorage.getItem("bf_activity") || "[]");
+      let foundAndMoved = false;
+
+      if (action === 'acceptTask') {
+        const index = board.todo.findIndex(t => t.text === decodedTaskName);
+        if (index !== -1) {
+          const task = board.todo.splice(index, 1)[0];
+          board.inprog.push(task);
+          foundAndMoved = true;
+          toast(`Task "${task.text}" accepted and moved to In Progress!`, "success");
+          activities.unshift(`Accepted task "${task.text}"`);
+        } else {
+          toast(`Could not find task "${decodedTaskName}" in To Do.`, "error");
+        }
+      } else if (action === 'completeTask') {
+        // Task can be completed from either To Do or In Progress
+        let task = null;
+        let pIndex = board.inprog.findIndex(t => t.text === decodedTaskName);
+        if (pIndex !== -1) {
+          task = board.inprog.splice(pIndex, 1)[0];
+        } else {
+          let tdIndex = board.todo.findIndex(t => t.text === decodedTaskName);
+          if (tdIndex !== -1) {
+            task = board.todo.splice(tdIndex, 1)[0];
+          }
+        }
+
+        if (task) {
+          board.done.push(task);
+          foundAndMoved = true;
+          toast(`Task "${task.text}" marked as Complete!`, "success");
+          activities.unshift(`Completed task "${task.text}"`);
+        } else {
+          toast(`Could not find active task "${decodedTaskName}".`, "error");
+        }
+      }
+
+      if (foundAndMoved) {
+        saveBoard(board);
+        renderBoard();
+        localStorage.setItem("bf_activity", JSON.stringify(activities.slice(0, 20)));
+      }
+
+      // Clean up URL so refresh doesn't trigger it again
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   </script>
 
   <script type="module" src="authGuard.js"></script>

@@ -1,0 +1,28 @@
+{
+  "fe020c5865b2256c46c245ac8ca741812d8b5081245615e4169e7e220a44f65d": {
+    "inviteeName": "Srinivasan D",
+    "inviteeEmail": "sri.unique10@gmail.com",
+    "role": "Admin",
+    "inviterName": "Shreyas G Joshi",
+    "inviterEmail": "shreyasgjoshising1@gmail.com",
+    "status": "pending"
+  },
+  "b991c722b59edd2b9afa7ec31382f20282fb05320bdcce816fa789be3987e4d1": {
+    "inviteeName": "Srinivasan D",
+    "inviteeEmail": "sri.unique10@gmail.com",
+    "role": "Admin",
+    "inviterName": "Shreyas G Joshi",
+    "inviterEmail": "shreyasgjoshising1@gmail.com",
+    "status": "pending",
+    "clientUrl": "http://localhost:5500"
+  },
+  "752c2302e0a91a582a878c09cb845c297f076f706bdd82a1705597e8786454ec": {
+    "inviteeName": "Disha",
+    "inviteeEmail": "dishakatrathana@gmail.com",
+    "role": "Member",
+    "inviterName": "Shreyas G Joshi",
+    "inviterEmail": "shreyasgjoshising1@gmail.com",
+    "status": "pending",
+    "clientUrl": "http://localhost:5500"
+  }
+}

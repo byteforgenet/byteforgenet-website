@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description"
         content="Learn about Byteforgenet — a modern project management SaaS built for structured teams." />
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./style.css?v=1772010732771" />
     <style>
         * {
             box-sizing: border-box;
@@ -26,7 +26,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(12, 12, 16, 0.55);
+            background: rgba(12, 12, 16, 0.06);
             backdrop-filter: blur(16px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.07);
         }
@@ -216,9 +216,21 @@
 
 <body>
 
+    <!-- CURSOR GLOW -->
+    <div class="cursor-glow" id="cursorGlow"></div>
+    <script>
+        const cursorGlow = document.getElementById("cursorGlow");
+        document.addEventListener("mousemove", (e) => {
+            requestAnimationFrame(() => {
+                cursorGlow.style.transform = `translate(${e.clientX - 400}px, ${e.clientY - 400}px)`;
+            });
+        });
+    </script>
+
+
     <nav class="pub-nav">
         <div class="pub-nav-inner">
-            <a href="index.html" class="pub-logo">Byteforgenet</a>
+            <a href="dashboard.html" class="pub-logo" style="text-decoration:none; color:inherit;">Byteforgenet</a>
             <div class="pub-links">
                 <a href="about.html">About</a>
                 <a href="careers.html">Careers</a>

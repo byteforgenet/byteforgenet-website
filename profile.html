@@ -5,8 +5,8 @@
   <meta charset="UTF-8" />
   <title>Profile | Byteforgenet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="./style.css" />
-  <script type="module" src="layout.js"></script>
+  <link rel="stylesheet" href="./style.css?v=1772010732776" />
+  <script type="module" src="layout.js?v=3"></script>
   <style>
     .profile-hero {
       display: flex;
@@ -131,12 +131,24 @@
   </style>
 </head>
 
-<body class="auth-bg">
+<body>
+
+  <!-- CURSOR GLOW -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <script>
+    const cursorGlow = document.getElementById("cursorGlow");
+    document.addEventListener("mousemove", (e) => {
+      requestAnimationFrame(() => {
+        cursorGlow.style.transform = `translate(${e.clientX - 400}px, ${e.clientY - 400}px)`;
+      });
+    });
+  </script>
+
 
   <!-- TOPBAR -->
   <header class="topbar">
     <div class="topbar-left">
-      <h1 class="app-logo">Byteforgenet</h1>
+      <a href="dashboard.html" class="app-logo" style="text-decoration:none; color:inherit;">Byteforgenet</a>
     </div>
     <div class="topbar-right">
       <button id="themeToggle" title="Toggle theme"
@@ -240,16 +252,6 @@
     import { onAuthStateChanged, updateProfile, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
     import { toast } from "./shared.js";
 
-    // Theme
-    const savedTheme = localStorage.getItem("bf_theme") || "dark";
-    if (savedTheme === "light") document.documentElement.classList.add("light-mode");
-    const themeBtn = document.getElementById("themeToggle");
-    themeBtn.textContent = savedTheme === "light" ? "☀️" : "🌙";
-    themeBtn.onclick = function () {
-      const isLight = document.documentElement.classList.toggle("light-mode");
-      localStorage.setItem("bf_theme", isLight ? "light" : "dark");
-      this.textContent = isLight ? "☀️" : "🌙";
-    };
 
     onAuthStateChanged(auth, (user) => {
       if (!user) return;

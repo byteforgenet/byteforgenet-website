@@ -6,7 +6,7 @@
   <title>Contact | Byteforgenet</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Get in touch with the Byteforgenet team." />
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./style.css?v=1772010732773" />
   <style>
     * {
       box-sizing: border-box;
@@ -24,7 +24,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(12, 12, 16, 0.55);
+      background: rgba(12, 12, 16, 0.06);
       backdrop-filter: blur(16px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     }
@@ -273,9 +273,21 @@
 
 <body>
 
+  <!-- CURSOR GLOW -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+  <script>
+    const cursorGlow = document.getElementById("cursorGlow");
+    document.addEventListener("mousemove", (e) => {
+      requestAnimationFrame(() => {
+        cursorGlow.style.transform = `translate(${e.clientX - 400}px, ${e.clientY - 400}px)`;
+      });
+    });
+  </script>
+
+
   <nav class="pub-nav">
     <div class="pub-nav-inner">
-      <a href="index.html" class="pub-logo">Byteforgenet</a>
+      <a href="dashboard.html" class="pub-logo" style="text-decoration:none; color:inherit;">Byteforgenet</a>
       <div class="pub-links">
         <a href="about.html">About</a>
         <a href="careers.html">Careers</a>
@@ -327,11 +339,12 @@
         <div class="form-row">
           <label>Topic</label>
           <select id="cf-topic">
-            <option value="general">General question</option>
-            <option value="bug">Bug report</option>
-            <option value="feature">Feature request</option>
-            <option value="billing">Billing</option>
-            <option value="other">Other</option>
+            <option value="General question">General question</option>
+            <option value="UI/UX errors">UI/UX Errors</option>
+            <option value="Task errors">Task Errors</option>
+            <option value="Bug report">Bug report</option>
+            <option value="Feature request">Feature request</option>
+            <option value="Other">Other</option>
           </select>
         </div>
         <div class="form-row">
@@ -355,16 +368,61 @@
   </footer>
 
   <script>
-    document.getElementById("contactForm").addEventListener("submit", function (e) {
+    document.getElementById("contactForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const btn = this.querySelector(".btn-submit");
+      const errorMsg = document.getElementById("errorMsg");
+      const successMsg = document.getElementById("successMsg");
+
+      if (errorMsg) errorMsg.style.display = "none";
+      successMsg.style.display = "none";
+
+      const payload = {
+        name: document.getElementById("cf-name").value,
+        email: document.getElementById("cf-email").value,
+        topic: document.getElementById("cf-topic").value,
+        message: document.getElementById("cf-message").value
+      };
+
       btn.textContent = "Sending…";
       btn.disabled = true;
-      setTimeout(() => {
-        document.getElementById("successMsg").style.display = "block";
+
+      try {
+        const res = await fetch("http://localhost:3000/api/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || "Failed to send message");
+
+        successMsg.style.display = "block";
         btn.textContent = "Message Sent ✓";
         this.reset();
-      }, 900);
+      } catch (err) {
+        console.error(err);
+        btn.textContent = "Send Message";
+        btn.disabled = false;
+
+        if (!errorMsg) {
+          const div = document.createElement("div");
+          div.id = "errorMsg";
+          div.style.color = "#f87171";
+          div.style.background = "rgba(248, 113, 113, 0.1)";
+          div.style.padding = "14px";
+          div.style.borderRadius = "10px";
+          div.style.marginTop = "14px";
+          div.style.marginBottom = "14px";
+          div.style.textAlign = "center";
+          div.style.fontSize = "14px";
+          div.textContent = "Failed to send. Is the backend running?";
+          this.insertBefore(div, btn);
+        } else {
+          errorMsg.style.display = "block";
+        }
+      }
     });
   </script>
 
